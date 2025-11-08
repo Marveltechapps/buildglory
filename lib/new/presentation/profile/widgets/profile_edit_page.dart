@@ -1,7 +1,8 @@
 import 'package:buildglory/constant/constant.dart';
+import 'package:buildglory/generated/bloc/bloc_exports.dart';
 import 'package:buildglory/final/home/pages/home_main_screen.dart';
-import 'package:buildglory/final/sell/bloc/sell_property_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'custom_input_field.dart';
 import 'custom_button.dart';
@@ -16,6 +17,26 @@ class ProfileEditPage extends StatefulWidget {
 class _ProfileEditPageState extends State<ProfileEditPage> {
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Load user profile data
+    _loadUserProfile();
+  }
+
+  void _loadUserProfile() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is Authenticated) {
+      final user = authState.user;
+      _fullNameController.text = user.name ?? '';
+      _emailController.text = user.email ?? '';
+    } else {
+      // Load profile from backend
+      context.read<AuthBloc>().add(const LoadUserProfileEvent());
+    }
+  }
 
   @override
   void dispose() {
@@ -24,27 +45,101 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     super.dispose();
   }
 
+  Future<void> _saveProfile() async {
+    // Validate name
+    if (_fullNameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your name'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validate email if provided
+    final email = _emailController.text.trim();
+    if (email.isNotEmpty && !_isValidEmail(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid email address'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    // Update profile using AuthBloc
+    context.read<AuthBloc>().add(
+          UpdateProfileEvent(
+            name: _fullNameController.text.trim(),
+            email: email.isNotEmpty ? email : null,
+          ),
+        );
+  }
+
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF9FAFB),
-        appBar: AppBar(
-          backgroundColor: const Color(0xFFF9FAFB),
-          title: Text(
-            'Profile Setup',
-            style: TextStyle(
-              color: Color(0xFF1A1A1A),
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.35,
-              fontFamily: 'Arial',
-              height: 1,
+      child: BlocConsumer<AuthBloc, AuthState>(
+        listener: (context, state) {
+          if (state is ProfileUpdated) {
+            setState(() => _isLoading = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profile updated successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            // Navigate to home
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const HomeMainScreen(),
+              ),
+            );
+          } else if (state is AuthError) {
+            setState(() => _isLoading = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+              ),
+            );
+          } else if (state is Authenticated) {
+            // Profile loaded, update fields
+            final user = state.user;
+            if (_fullNameController.text.isEmpty) {
+              _fullNameController.text = user.name ?? '';
+              _emailController.text = user.email ?? '';
+            }
+          }
+        },
+        builder: (context, state) {
+          return Scaffold(
+            backgroundColor: const Color(0xFFF9FAFB),
+            appBar: AppBar(
+              backgroundColor: const Color(0xFFF9FAFB),
+              title: const Text(
+                'Profile Setup',
+                style: TextStyle(
+                  color: Color(0xFF1A1A1A),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.35,
+                  fontFamily: 'Arial',
+                  height: 1,
+                ),
+              ),
             ),
-          ),
-        ),
-        body: SafeArea(
+            body: SafeArea(
           child: Container(
             constraints: const BoxConstraints(maxWidth: 480),
             width: double.infinity,
@@ -154,24 +249,24 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                         const SizedBox(height: 24),
                         // Save Button
                         CustomButton(
-                          text: 'Save',
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) {
-                                  return HomeMainScreen();
-                                },
-                              ),
-                            );
-                          },
+                          text: _isLoading ? 'Saving...' : 'Save',
+                          onPressed: _isLoading ? null : _saveProfile,
                         ),
+                        
+                        // Loading Indicator
+                        if (_isLoading)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 16),
+                            child: CircularProgressIndicator(),
+                          ),
                       ],
                     ),
                   ),
                 ),
               ],
             ),
+          ),
+        ),
           ),
         ),
       ),
