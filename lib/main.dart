@@ -58,21 +58,47 @@ class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
   }
 
   Future<void> _navigateToHome() async {
-    // Wait for 2 seconds (splash screen duration)
+    // Wait for splash screen duration + auth check
     await Future.delayed(const Duration(seconds: 2));
     
-    if (mounted) {
-      // Check authentication status
-      final authBloc = context.read<AuthBloc>();
-      final authState = authBloc.state;
-      
-      if (authState is Authenticated) {
+    if (!mounted) return;
+
+    final authBloc = context.read<AuthBloc>();
+    
+    // Wait for auth state to be determined (not loading)
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    if (!mounted) return;
+
+    // Listen to auth state changes
+    final subscription = authBloc.stream.listen((state) {
+      if (!mounted) return;
+
+      if (state is Authenticated) {
         // User is logged in, go to YOUR home screen
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const HomeScreen()),
         );
-      } else {
+      } else if (state is Unauthenticated || state is AuthError) {
         // User not logged in, go to YOUR login screen
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      }
+    });
+
+    // Check current state immediately
+    final currentState = authBloc.state;
+    if (currentState is Authenticated) {
+      subscription.cancel();
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
+    } else if (currentState is Unauthenticated || currentState is AuthError) {
+      subscription.cancel();
+      if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const LoginScreen()),
         );

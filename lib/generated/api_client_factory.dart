@@ -32,7 +32,7 @@ class ApiClientFactory {
     AuthManager? authManager,
   }) : _apiClient = ApiClient(
           baseUrl: baseUrl,
-          authManager: authManager ?? InMemoryAuthManager(),
+          authManager: authManager ?? SharedPreferencesAuthManager(),
         ) {
     _initializeServices();
   }
@@ -60,7 +60,9 @@ class ApiClientFactory {
   /// Dispose resources
   void dispose() {
     _apiClient.dispose();
-    if (authManager is InMemoryAuthManager) {
+    if (authManager is SharedPreferencesAuthManager) {
+      (authManager as SharedPreferencesAuthManager).dispose();
+    } else if (authManager is InMemoryAuthManager) {
       (authManager as InMemoryAuthManager).dispose();
     }
   }

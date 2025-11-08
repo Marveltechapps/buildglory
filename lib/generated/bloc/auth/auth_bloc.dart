@@ -32,12 +32,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     CheckAuthStatusEvent event,
     Emitter<AuthState> emit,
   ) async {
+    print('🔍 AuthBloc: Checking authentication status...');
     emit(const AuthLoading());
 
     final isAuth = await _authService.isAuthenticated();
+    print('🔍 AuthBloc: isAuthenticated = $isAuth');
+    
     if (isAuth) {
+      print('✅ AuthBloc: User is authenticated, loading profile...');
       add(const LoadUserProfileEvent());
     } else {
+      print('❌ AuthBloc: User is not authenticated');
       emit(const Unauthenticated());
     }
   }
@@ -106,15 +111,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     LoadUserProfileEvent event,
     Emitter<AuthState> emit,
   ) async {
+    print('📱 AuthBloc: Loading user profile...');
     emit(const AuthLoading());
 
     final response = await _profileService.getProfile();
 
     response.when(
       success: (user) {
+        print('✅ AuthBloc: Profile loaded successfully - ${user.name}');
         emit(Authenticated(user: user));
       },
       failure: (error) {
+        print('❌ AuthBloc: Failed to load profile - ${error.message}');
         emit(AuthError(message: error.message));
       },
     );
