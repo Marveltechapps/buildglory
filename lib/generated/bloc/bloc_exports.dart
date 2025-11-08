@@ -22,3 +22,13 @@ export 'notification/notification_event.dart';
 export 'notification/notification_state.dart';
 export 'notification/notification_bloc.dart';
 
+// Sell BLoC
+export 'sell/sell_event.dart';
+export 'sell/sell_state.dart';
+export 'sell/sell_bloc.dart';
+
+// Exchange BLoC
+export 'exchange/exchange_event.dart';
+export 'exchange/exchange_state.dart';
+export 'exchange/exchange_bloc.dart';
+

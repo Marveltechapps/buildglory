@@ -206,25 +206,306 @@ class _HomeScreenBlocState extends State<HomeScreenBloc> {
 }
 
 /// Sell List Widget using BLoC
-class SellListBlocWidget extends StatelessWidget {
+class SellListBlocWidget extends StatefulWidget {
   const SellListBlocWidget({super.key});
 
   @override
+  State<SellListBlocWidget> createState() => _SellListBlocWidgetState();
+}
+
+class _SellListBlocWidgetState extends State<SellListBlocWidget> {
+  @override
+  void initState() {
+    super.initState();
+    // Load sells when widget loads
+    context.read<SellBloc>().add(const LoadSellsEvent());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Sell listings coming soon...'),
+    return BlocBuilder<SellBloc, SellState>(
+      builder: (context, state) {
+        if (state is SellLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state is SellError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(state.message),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    context.read<SellBloc>().add(const LoadSellsEvent());
+                  },
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (state is SellsEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.sell_outlined, size: 64, color: Colors.grey.shade400),
+                const SizedBox(height: 16),
+                Text(
+                  'No sell listings found',
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Navigate to create sell screen
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Create sell listing feature')),
+                    );
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Create Listing'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (state is SellsLoaded) {
+          return RefreshIndicator(
+            onRefresh: () async {
+              context.read<SellBloc>().add(const LoadSellsEvent());
+            },
+            child: ListView.builder(
+              itemCount: state.sells.length,
+              itemBuilder: (context, index) {
+                final sell = state.sells[index];
+                return SellCardWidget(sell: sell);
+              },
+            ),
+          );
+        }
+
+        return const SizedBox.shrink();
+      },
     );
   }
 }
 
 /// Exchange List Widget using BLoC
-class ExchangeListBlocWidget extends StatelessWidget {
+class ExchangeListBlocWidget extends StatefulWidget {
   const ExchangeListBlocWidget({super.key});
 
   @override
+  State<ExchangeListBlocWidget> createState() => _ExchangeListBlocWidgetState();
+}
+
+class _ExchangeListBlocWidgetState extends State<ExchangeListBlocWidget> {
+  @override
+  void initState() {
+    super.initState();
+    // Load exchanges when widget loads
+    context.read<ExchangeBloc>().add(const LoadExchangesEvent());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Exchange listings coming soon...'),
+    return BlocBuilder<ExchangeBloc, ExchangeState>(
+      builder: (context, state) {
+        if (state is ExchangeLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state is ExchangeError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(state.message),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    context.read<ExchangeBloc>().add(const LoadExchangesEvent());
+                  },
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (state is ExchangesEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.swap_horiz, size: 64, color: Colors.grey.shade400),
+                const SizedBox(height: 16),
+                Text(
+                  'No exchange requests found',
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Navigate to create exchange screen
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Create exchange feature')),
+                    );
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Create Exchange'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (state is ExchangesLoaded) {
+          return RefreshIndicator(
+            onRefresh: () async {
+              context.read<ExchangeBloc>().add(const LoadExchangesEvent());
+            },
+            child: ListView.builder(
+              itemCount: state.exchanges.length,
+              itemBuilder: (context, index) {
+                final exchange = state.exchanges[index];
+                return ExchangeCardWidget(exchange: exchange);
+              },
+            ),
+          );
+        }
+
+        return const SizedBox.shrink();
+      },
+    );
+  }
+}
+
+/// Sell Card Widget
+class SellCardWidget extends StatelessWidget {
+  final Sell sell;
+
+  const SellCardWidget({super.key, required this.sell});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '₹${_formatPrice(sell.price)}',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green.shade700,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    sell.advertisementType.value,
+                    style: TextStyle(fontSize: 12, color: Colors.blue.shade700),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${sell.bhkType} ${sell.propertyType.value}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    '${sell.location.locality}, ${sell.location.city}',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatPrice(double price) {
+    if (price >= 10000000) {
+      return '${(price / 10000000).toStringAsFixed(2)} Cr';
+    } else if (price >= 100000) {
+      return '${(price / 100000).toStringAsFixed(2)} Lac';
+    }
+    return price.toStringAsFixed(0);
+  }
+}
+
+/// Exchange Card Widget
+class ExchangeCardWidget extends StatelessWidget {
+  final Exchange exchange;
+
+  const ExchangeCardWidget({super.key, required this.exchange});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.swap_horiz, color: Colors.orange),
+                const SizedBox(width: 8),
+                const Text(
+                  'Exchange Request',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text('Matched Properties: ${exchange.matchedProperties.length}'),
+            if (exchange.fallbackToBuy) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'Open to Buy',
+                  style: TextStyle(fontSize: 12, color: Colors.green),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

@@ -50,6 +50,20 @@ class BlocProviderSetup extends StatelessWidget {
             notificationService: api.notification,
           ),
         ),
+
+        // Sell BLoC
+        BlocProvider<SellBloc>(
+          create: (context) => SellBloc(
+            sellService: api.sell,
+          ),
+        ),
+
+        // Exchange BLoC
+        BlocProvider<ExchangeBloc>(
+          create: (context) => ExchangeBloc(
+            exchangeService: api.exchange,
+          ),
+        ),
       ],
       child: child,
     );
