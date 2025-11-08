@@ -2,6 +2,7 @@ import 'package:buildglory/constant/constant.dart';
 import 'package:buildglory/final/contactus/bloc/contactus_bloc.dart';
 import 'package:buildglory/final/contactus/bloc/contactus_event.dart';
 import 'package:buildglory/final/contactus/bloc/contactus_state.dart';
+import 'package:buildglory/generated/api_client_factory.dart';
 import 'package:buildglory/screens/exchange/exchange_success_two_screen.dart';
 import 'package:buildglory/screens/residential/contactus/contact_form.dart';
 import 'package:buildglory/screens/residential/contactus/property_card.dart';
@@ -25,8 +26,15 @@ class ContactusScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Create API client factory to get EnquiryService
+    final apiFactory = ApiClientFactory(
+      baseUrl: 'http://3.6.250.39:6000/api',
+    );
+    
     return BlocProvider(
-      create: (context) => ContactusBloc(),
+      create: (context) => ContactusBloc(
+        enquiryService: apiFactory.enquiry,
+      ),
       child: BlocConsumer<ContactusBloc, ContactusState>(
         listener: (context, state) {
           if (state is ContactDataApiSuccessState) {

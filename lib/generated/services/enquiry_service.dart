@@ -9,7 +9,7 @@ class EnquiryService {
   EnquiryService(this._apiClient);
 
   /// Submit enquiry (requires authentication)
-  Future<ApiResponse<Enquiry>> submitEnquiry({
+  Future<ApiResponse<Map<String, dynamic>>> submitEnquiry({
     required String propertyId,
     required EnquiryType type,
     String? message,
@@ -18,12 +18,16 @@ class EnquiryService {
       'propertyId': propertyId,
       'type': type.value,
     };
-    if (message != null) body['message'] = message;
+    if (message != null && message.isNotEmpty) {
+      body['message'] = message;
+    }
+
+    print('🔍 EnquiryService: Submitting enquiry with body: $body');
 
     return await _apiClient.post(
       '/enquiry',
       body: body,
-      fromJson: (json) => Enquiry.fromJson(json as Map<String, dynamic>),
+      fromJson: (json) => json as Map<String, dynamic>,
     );
   }
 }
