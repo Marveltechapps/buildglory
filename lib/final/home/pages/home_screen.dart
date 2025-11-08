@@ -1,7 +1,5 @@
 import 'package:buildglory/constant/constant.dart';
-import 'package:buildglory/final/home/bloc/home_bloc.dart';
-import 'package:buildglory/final/home/bloc/home_event.dart';
-import 'package:buildglory/final/home/bloc/home_state.dart';
+import 'package:buildglory/generated/bloc/bloc_exports.dart';
 import 'package:buildglory/final/home/widgets/property_home_screen.dart';
 import 'package:buildglory/new/presentation/home/widgets/exchange_widget.dart';
 import 'package:buildglory/new/presentation/home/widgets/sell_widget.dart';
@@ -10,54 +8,106 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  static String selecteType = "Buy";
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String selectedType = "Buy";
+
+  @override
+  void initState() {
+    super.initState();
+    // Load initial data
+    context.read<PropertyBloc>().add(const LoadHomepagePropertiesEvent());
+    context.read<NotificationBloc>().add(const LoadNotificationsEvent());
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => HomeBloc(),
-      child: BlocConsumer<HomeBloc, HomeState>(
-        listener: (context, state) {
-          if (state is SelectedTypeSuccessState) {
-            selecteType = state.title;
-            flowname = selecteType;
-          }
-        },
-        builder: (context, state) {
-          return PopScope(
-            canPop: false,
-            child: Scaffold(
-              backgroundColor: Colors.white,
-              body: SafeArea(
-                child: SingleChildScrollView(
-                  child: Column(
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authState) {
+        final userName = authState is Authenticated
+            ? (authState.user.name ?? "there")
+            : "there";
+
+        return BlocBuilder<NotificationBloc, NotificationState>(
+          builder: (context, notificationState) {
+            final unreadCount = notificationState is NotificationsLoaded
+                ? notificationState.unreadCount
+                : 0;
+
+            return _buildHomeScreen(context, userName, unreadCount);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildHomeScreen(BuildContext context, String userName, int unreadCount) {
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                ListTile(
+                  title: Text(
+                    "Hey $userName!",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: const Text("Find, Flip, Flourish"),
+                  trailing: Stack(
                     children: [
-                      ListTile(
-                        title: Text(
-                          "Hey Ababa !",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) {
+                                return const NotificationScreen();
+                              },
+                            ),
+                          );
+                        },
+                        child: const Icon(Icons.notifications_none_rounded),
+                      ),
+                      if (unreadCount > 0)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              unreadCount > 9 ? '9+' : '$unreadCount',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ),
-                        subtitle: Text("Find, Flip, Flourish"),
-                        trailing: InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) {
-                                  return NotificationScreen();
-                                },
-                              ),
-                            );
-                          },
-                          child: Icon(Icons.notifications_none_rounded),
-                        ),
-                      ),
+                    ],
+                  ),
+                ),
                       Padding(
                         padding: const EdgeInsets.only(
                           left: 20.0,
@@ -77,13 +127,18 @@ class HomeScreen extends StatelessWidget {
                               Expanded(
                                 child: InkWell(
                                   onTap: () {
-                                    context.read<HomeBloc>().add(
-                                      OnSelectTypeEvent(title: "Sell"),
-                                    );
+                                    setState(() {
+                                      selectedType = "Sell";
+                                      flowname = "Sell";
+                                    });
+                                    // Load sell listings
+                                    context.read<SellBloc>().add(
+                                          const LoadSellsEvent(),
+                                        );
                                   },
                                   child: Container(
-                                    margin: EdgeInsets.all(4),
-                                    decoration: selecteType == "Sell"
+                                    margin: const EdgeInsets.all(4),
+                                    decoration: selectedType == "Sell"
                                         ? BoxDecoration(
                                             color: Colors.white,
                                             border: Border.all(
@@ -100,7 +155,7 @@ class HomeScreen extends StatelessWidget {
                                           MainAxisAlignment.center,
                                       children: [
                                         SvgPicture.asset(sellIcon),
-                                        Text("Sell"),
+                                        const Text("Sell"),
                                       ],
                                     ),
                                   ),
@@ -109,13 +164,18 @@ class HomeScreen extends StatelessWidget {
                               Expanded(
                                 child: InkWell(
                                   onTap: () {
-                                    context.read<HomeBloc>().add(
-                                      OnSelectTypeEvent(title: "Buy"),
-                                    );
+                                    setState(() {
+                                      selectedType = "Buy";
+                                      flowname = "Buy";
+                                    });
+                                    // Load properties
+                                    context.read<PropertyBloc>().add(
+                                          const LoadHomepagePropertiesEvent(),
+                                        );
                                   },
                                   child: Container(
-                                    margin: EdgeInsets.all(4),
-                                    decoration: selecteType == "Buy"
+                                    margin: const EdgeInsets.all(4),
+                                    decoration: selectedType == "Buy"
                                         ? BoxDecoration(
                                             color: Colors.white,
                                             border: Border.all(
@@ -132,7 +192,7 @@ class HomeScreen extends StatelessWidget {
                                           MainAxisAlignment.center,
                                       children: [
                                         SvgPicture.asset(buyIcon),
-                                        Text("Buy"),
+                                        const Text("Buy"),
                                       ],
                                     ),
                                   ),
@@ -141,13 +201,18 @@ class HomeScreen extends StatelessWidget {
                               Expanded(
                                 child: InkWell(
                                   onTap: () {
-                                    context.read<HomeBloc>().add(
-                                      OnSelectTypeEvent(title: "Exchange"),
-                                    );
+                                    setState(() {
+                                      selectedType = "Exchange";
+                                      flowname = "Exchange";
+                                    });
+                                    // Load exchanges
+                                    context.read<ExchangeBloc>().add(
+                                          const LoadExchangesEvent(),
+                                        );
                                   },
                                   child: Container(
-                                    margin: EdgeInsets.all(4),
-                                    decoration: selecteType == "Exchange"
+                                    margin: const EdgeInsets.all(4),
+                                    decoration: selectedType == "Exchange"
                                         ? BoxDecoration(
                                             color: Colors.white,
                                             border: Border.all(
@@ -164,7 +229,7 @@ class HomeScreen extends StatelessWidget {
                                           MainAxisAlignment.center,
                                       children: [
                                         SvgPicture.asset(exchangeIcon),
-                                        Text("Exchange"),
+                                        const Text("Exchange"),
                                       ],
                                     ),
                                   ),
@@ -176,21 +241,19 @@ class HomeScreen extends StatelessWidget {
                       ),
                       Padding(
                         padding: const EdgeInsets.all(20.0),
-                        child: selecteType == "Sell"
-                            ? SellWidget()
-                            : selecteType == "Buy"
-                            ? PropertyHomeScreen()
-                            : selecteType == "Exchange"
-                            ? ExchangeWidget()
-                            : null,
+                        child: selectedType == "Sell"
+                            ? const SellWidget()
+                            : selectedType == "Buy"
+                                ? const PropertyHomeScreen()
+                                : selectedType == "Exchange"
+                                    ? const ExchangeWidget()
+                                    : null,
                       ),
                     ],
                   ),
                 ),
               ),
             ),
-          );
-        },
       ),
     );
   }

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'generated/bloc/bloc_provider_setup.dart';
 import 'generated/bloc/bloc_exports.dart';
-import 'generated/screens_bloc/home_screen_bloc.dart';
-import 'generated/widgets_bloc/auth_bloc_widgets.dart';
 import 'final/splash/pages/splash_screen.dart';
+import 'final/login/pages/login_screen.dart';
+import 'final/home/pages/home_screen.dart';
 
 void main() {
   // Optional: Add BLoC observer for debugging
@@ -67,14 +67,14 @@ class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
       final authState = authBloc.state;
       
       if (authState is Authenticated) {
-        // User is logged in, go to home
+        // User is logged in, go to YOUR home screen
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreenBloc()),
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
         );
       } else {
-        // User not logged in, go to onboarding/login
+        // User not logged in, go to YOUR login screen
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginScreenWrapper()),
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
         );
       }
     }
@@ -82,27 +82,7 @@ class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    // Use your existing splash screen
+    // Use YOUR existing splash screen
     return const SplashScreen();
-  }
-}
-
-/// Login Screen Wrapper
-class LoginScreenWrapper extends StatelessWidget {
-  const LoginScreenWrapper({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: OTPLoginBlocWidget(
-          onSuccess: () {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const HomeScreenBloc()),
-            );
-          },
-        ),
-      ),
-    );
   }
 }

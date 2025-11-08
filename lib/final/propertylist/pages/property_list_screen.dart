@@ -1,8 +1,6 @@
 import 'package:buildglory/constant/constant.dart';
-import 'package:buildglory/final/propertylist/bloc/residentiallist_bloc.dart';
-import 'package:buildglory/final/propertylist/bloc/residentiallist_event.dart';
-import 'package:buildglory/final/propertylist/bloc/residentiallist_state.dart';
-import 'package:buildglory/final/propertylist/model/property_list_response_mode.dart';
+import 'package:buildglory/generated/bloc/bloc_exports.dart';
+import 'package:buildglory/generated/models/property.dart' as GeneratedProperty;
 import 'package:buildglory/final/propertylist/widgets/filter_widget.dart';
 import 'package:buildglory/new/presentation/profile/widgets/custom_input_field.dart';
 import 'package:buildglory/screens/residential/models/property.dart';
@@ -12,7 +10,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 
-class PropertyListScreen extends StatelessWidget {
+class PropertyListScreen extends StatefulWidget {
   final String title;
   final String type;
   final String colorcode;
@@ -24,9 +22,14 @@ class PropertyListScreen extends StatelessWidget {
     required this.colorcode,
   });
 
-  static TextEditingController searchController = TextEditingController();
-  static bool isfilter = false;
-  static List<PropertyListResponseModel> propertlist = [];
+  @override
+  State<PropertyListScreen> createState() => _PropertyListScreenState();
+}
+
+class _PropertyListScreenState extends State<PropertyListScreen> {
+  final TextEditingController searchController = TextEditingController();
+  bool isfilter = false;
+  List<GeneratedProperty.Property> propertyList = [];
 
   String formatIndianAmount(num amount) {
     if (amount >= 10000000) {
@@ -47,23 +50,42 @@ class PropertyListScreen extends StatelessWidget {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Load properties with type filter
+    context.read<PropertyBloc>().add(
+          LoadHomepagePropertiesEvent(type: widget.title),
+        );
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => ResidentiallistBloc(),
-      child: BlocConsumer<ResidentiallistBloc, ResidentiallistState>(
+    return BlocConsumer<PropertyBloc, PropertyState>(
         listener: (context, state) {
-          if (state is ResidentialListApiSuccessState) {
-            context.read<ResidentiallistBloc>().propertylist =
-                state.propertyListResponseModel;
-            propertlist = state.propertyListResponseModel;
+          if (state is PropertiesLoaded) {
+            setState(() {
+              propertyList = state.properties;
+            });
+          } else if (state is PropertyError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+              ),
+            );
+          } else if (state is PropertySaved) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Property saved to wishlist!')),
+            );
           }
         },
         builder: (context, state) {
-          if (state is ResidentialListInitialState) {
-            context.read<ResidentiallistBloc>().add(
-              GetPropertyListApiEvent(propertytitle: title),
-            );
-          }
           return Scaffold(
             backgroundColor: Colors.white,
             appBar: AppBar(
@@ -75,8 +97,8 @@ class PropertyListScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        title,
-                        style: TextStyle(
+                        widget.title,
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF1A1A1A),
@@ -86,8 +108,8 @@ class PropertyListScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '8 properties available',
-                        style: TextStyle(
+                        '${propertyList.length} properties available',
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
                           color: Color(0xFF6A7282),
@@ -99,9 +121,9 @@ class PropertyListScreen extends StatelessWidget {
                   ),
                   InkWell(
                     onTap: () {
-                      // setState(() {
-                      //   isfilter = !isfilter;
-                      // });
+                      setState(() {
+                        isfilter = !isfilter;
+                      });
                     },
                     child: SvgPicture.asset(filterIcon),
                   ),
@@ -155,9 +177,35 @@ class PropertyListScreen extends StatelessWidget {
                   ),
                 // Content area
                 Expanded(
-                  child: ListView.builder(
-                    itemCount: propertlist.length,
-                    itemBuilder: (context, index) {
+                  child: state is PropertyLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : propertyList.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.home_outlined,
+                                      size: 64, color: Colors.grey.shade400),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No properties found',
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.grey.shade600),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : RefreshIndicator(
+                              onRefresh: () async {
+                                context.read<PropertyBloc>().add(
+                                      LoadHomepagePropertiesEvent(
+                                          type: widget.title),
+                                    );
+                              },
+                              child: ListView.builder(
+                                itemCount: propertyList.length,
+                                itemBuilder: (context, index) {
                       return Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -192,14 +240,14 @@ class PropertyListScreen extends StatelessWidget {
                                           ),
                                           child: CachedNetworkImage(
                                             imageUrl:
-                                                propertlist[index].image ?? "",
-                                            placeholder: (context, url) => Center(
+                                                propertyList[index].image ?? "",
+                                            placeholder: (context, url) => const Center(
                                               child:
                                                   CircularProgressIndicator(),
                                             ),
                                             errorWidget:
                                                 (context, url, error) =>
-                                                    Icon(Icons.error),
+                                                   const Icon(Icons.error),
                                             width: double.infinity,
                                             height: double.infinity,
                                             fit: BoxFit.cover,
@@ -362,9 +410,9 @@ class PropertyListScreen extends StatelessWidget {
                                                   ),
                                                   const SizedBox(height: 4),
                                                   Text(
-                                                    propertlist[index].title ??
+                                                    propertyList[index].title ??
                                                         "",
-                                                    style: TextStyle(
+                                                    style: const TextStyle(
                                                       fontSize: 12,
                                                       fontWeight:
                                                           FontWeight.w400,
@@ -395,8 +443,8 @@ class PropertyListScreen extends StatelessWidget {
                                                     vertical: 3,
                                                   ),
                                               child: Text(
-                                                propertlist[index].type ?? "",
-                                                style: TextStyle(
+                                                propertyList[index].type.value,
+                                                style: const TextStyle(
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w400,
                                                   color: Color(0xFF4A5565),
@@ -418,12 +466,11 @@ class PropertyListScreen extends StatelessWidget {
                                             ),
                                             const SizedBox(width: 4),
                                             Expanded(
-                                              child: Text(
-                                                propertlist[index]
-                                                        .location
-                                                        ?.fullAddress ??
-                                                    "",
-                                                style: TextStyle(
+                                            child: Text(
+                                              propertyList[index]
+                                                      .location
+                                                      .fullAddress,
+                                              style: const TextStyle(
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w400,
                                                   color: Color(0xFF6A7282),
@@ -439,8 +486,8 @@ class PropertyListScreen extends StatelessWidget {
                                         Row(
                                           children: [
                                             // Bed
-                                            propertlist[index].layout == null
-                                                ? SizedBox()
+                                            propertyList[index].layout == null
+                                                ? const SizedBox()
                                                 : Expanded(
                                                     child: Row(
                                                       children: [
@@ -453,8 +500,8 @@ class PropertyListScreen extends StatelessWidget {
                                                           width: 4,
                                                         ),
                                                         Text(
-                                                          "${propertlist[index].layout!.bedrooms} Bed",
-                                                          style: TextStyle(
+                                                          "${propertyList[index].layout!.bedrooms} Bed",
+                                                          style: const TextStyle(
                                                             fontSize: 12,
                                                             fontWeight:
                                                                 FontWeight.w400,
@@ -469,8 +516,8 @@ class PropertyListScreen extends StatelessWidget {
                                                     ),
                                                   ),
                                             // Bath
-                                            propertlist[index].layout == null
-                                                ? SizedBox()
+                                            propertyList[index].layout == null
+                                                ? const SizedBox()
                                                 : Expanded(
                                                     child: Row(
                                                       children: [
@@ -483,8 +530,8 @@ class PropertyListScreen extends StatelessWidget {
                                                           width: 4,
                                                         ),
                                                         Text(
-                                                          "${propertlist[index].layout!.bathrooms} Bath",
-                                                          style: TextStyle(
+                                                          "${propertyList[index].layout!.bathrooms} Bath",
+                                                          style: const TextStyle(
                                                             fontSize: 12,
                                                             fontWeight:
                                                                 FontWeight.w400,
@@ -509,8 +556,8 @@ class PropertyListScreen extends StatelessWidget {
                                                   ),
                                                   const SizedBox(width: 4),
                                                   Text(
-                                                    '${propertlist[index].sqft} sqft',
-                                                    style: TextStyle(
+                                                    '${propertyList[index].sqft} sqft',
+                                                    style: const TextStyle(
                                                       fontSize: 12,
                                                       fontWeight:
                                                           FontWeight.w400,
@@ -560,63 +607,58 @@ class PropertyListScreen extends StatelessWidget {
                                                       context,
                                                       MaterialPageRoute(
                                                         builder: (context) {
-                                                          return /* title == "Plots"
-                                                              ? PlotDetailsScreen()
-                                                              :  */ ResidentialDetailScreen(
+                                                          return ResidentialDetailScreen(
                                                             property: Property(
                                                               id:
-                                                                  propertlist[index]
+                                                                  propertyList[index]
                                                                       .id ??
                                                                   "",
                                                               imageUrl:
-                                                                  propertlist[index]
+                                                                  propertyList[index]
                                                                       .image ??
                                                                   "",
                                                               status:
                                                                   "For Sale",
                                                               price:
-                                                                  "₹ ${propertlist[index].price}",
+                                                                  "₹ ${propertyList[index].price}",
                                                               name:
-                                                                  propertlist[index]
-                                                                      .title ??
-                                                                  "",
+                                                                  propertyList[index]
+                                                                      .title,
                                                               type:
-                                                                  propertlist[index]
-                                                                      .type ??
-                                                                  "",
+                                                                  propertyList[index]
+                                                                      .type.value,
                                                               location:
-                                                                  propertlist[index]
+                                                                  propertyList[index]
                                                                       .location
-                                                                      ?.fullAddress ??
-                                                                  "",
+                                                                      .fullAddress,
                                                               bedrooms:
-                                                                  propertlist[index]
+                                                                  propertyList[index]
                                                                       .layout
                                                                       ?.bedrooms ??
                                                                   0,
                                                               bathrooms:
-                                                                  propertlist[index]
+                                                                  propertyList[index]
                                                                       .layout
                                                                       ?.bathrooms ??
                                                                   0,
                                                               sqft:
-                                                                  propertlist[index]
-                                                                      .sqft ??
+                                                                  propertyList[index]
+                                                                      .sqft?.toInt() ??
                                                                   0,
                                                               description:
-                                                                  propertlist[index]
+                                                                  propertyList[index]
                                                                       .about ??
                                                                   "",
                                                               builtYear: "2018",
                                                               features:
-                                                                  propertlist[index]
+                                                                  propertyList[index]
                                                                       .amenities ??
                                                                   [],
                                                             ),
                                                             colorcode:
-                                                                colorcode,
-                                                            properytype: type,
-                                                            title: title,
+                                                                widget.colorcode,
+                                                            properytype: widget.type,
+                                                            title: widget.title,
                                                           );
                                                         },
                                                       ),
@@ -659,15 +701,14 @@ class PropertyListScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
+                                    );
+                                  },
+                                ),
+                              ),
+                ],
+              ),
           );
         },
-      ),
     );
   }
 }

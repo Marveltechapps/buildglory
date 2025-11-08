@@ -1,9 +1,6 @@
-import 'package:buildglory/final/login/bloc/login_bloc.dart';
-import 'package:buildglory/final/login/bloc/login_event.dart';
-import 'package:buildglory/final/login/bloc/login_state.dart';
+import 'package:buildglory/generated/bloc/bloc_exports.dart';
 import 'package:buildglory/final/widgets/appbar_widget.dart';
 import 'package:buildglory/final/login/pages/verification_success_screen.dart';
-import 'package:buildglory/presentation/home/bloc/home_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -54,24 +51,28 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => LoginBloc(),
-      child: BlocConsumer<LoginBloc, LoginState>(
+    return BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
-          if (state is VerifyApiOtpSuccessState) {
-            context.read<LoginBloc>().add(
-              SharedPreferenceEvent(
-                token: state.verifyOtpResponseModel.token ?? "",
-              ),
-            );
-          } else if (state is SharedPreferenceSavedState) {
+          if (state is Authenticated) {
+            // Token is automatically saved in AuthBloc
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) {
-                  return VerificationSuccessScreen();
+                  return const VerificationSuccessScreen();
                 },
               ),
+            );
+          } else if (state is AuthError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+              ),
+            );
+          } else if (state is OTPResent) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('OTP resent successfully')),
             );
           }
         },
@@ -201,7 +202,11 @@ class _OtpScreenState extends State<OtpScreen> {
 
                               // Resend OTP Button
                               GestureDetector(
-                                onTap: widget.onResendOtp,
+                                onTap: () {
+                                  context.read<AuthBloc>().add(
+                                        ResendOTPEvent(widget.phoneNumber),
+                                      );
+                                },
                                 child: Container(
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8),
@@ -232,30 +237,53 @@ class _OtpScreenState extends State<OtpScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.only(bottom: 20),
                       child: GestureDetector(
-                        onTap: () {
-                          context.read<LoginBloc>().add(
-                            VerifyOtpApiEvent(
-                              mobilenumber: widget.phoneNumber,
-                              otpvalue: _otpCode,
-                            ),
-                          );
-                        },
+                        onTap: state is AuthLoading
+                            ? null
+                            : () {
+                                if (_isOtpComplete) {
+                                  context.read<AuthBloc>().add(
+                                        VerifyOTPEvent(
+                                          mobileNumber: widget.phoneNumber,
+                                          otp: _otpCode,
+                                        ),
+                                      );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Please enter complete OTP'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              },
                         child: Container(
                           height: 42,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
-                            color: Color(0xFF155DFC),
+                            color: state is AuthLoading
+                                ? Colors.grey
+                                : const Color(0xFF155DFC),
                           ),
-                          child: const Center(
-                            child: Text(
-                              'Verify',
-                              style: TextStyle(
-                                color: Color(0xFFFFFFFF),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Arial',
-                              ),
-                            ),
+                          child: Center(
+                            child: state is AuthLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                    ),
+                                  )
+                                : const Text(
+                                    'Verify',
+                                    style: TextStyle(
+                                      color: Color(0xFFFFFFFF),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: 'Arial',
+                                    ),
+                                  ),
                           ),
                         ),
                       ),
@@ -266,7 +294,6 @@ class _OtpScreenState extends State<OtpScreen> {
             ),
           );
         },
-      ),
     );
   }
 }

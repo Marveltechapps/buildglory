@@ -1,6 +1,4 @@
-import 'package:buildglory/final/login/bloc/login_bloc.dart';
-import 'package:buildglory/final/login/bloc/login_event.dart';
-import 'package:buildglory/final/login/bloc/login_state.dart';
+import 'package:buildglory/generated/bloc/bloc_exports.dart';
 import 'package:buildglory/final/login/pages/otp_screen.dart';
 import 'package:buildglory/final/widgets/submit_button_widget.dart';
 import 'package:flutter/material.dart';
@@ -15,34 +13,29 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      child: BlocProvider(
-        create: (context) => LoginBloc(),
-        child: BlocConsumer<LoginBloc, LoginState>(
+      child: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
-            if (state is SendApiOtpSuccessState) {
-              if (state.sendOtpResponseModel.message ==
-                  "OTP sent successfully") {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return OtpScreen(
-                        phoneNumber: mobilenumberController.text,
-                      );
-                    },
-                  ),
-                );
-                // Fluttertoast.showToast(
-                //   msg: state.sendOtpResponseModel.message ?? "Success",
-                //   toastLength: Toast.LENGTH_SHORT,
-                //   timeInSecForIosWeb: 1,
-                //   backgroundColor: Colors.black,
-                //   textColor: Colors.white,
-                //   fontSize: 16.0,
-                // );
-              } else {
-                // ToastWidget.show(state.sendOtpResponseModel.message ?? "Error");
-              }
+            if (state is OTPSent) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) {
+                    return OtpScreen(
+                      phoneNumber: mobilenumberController.text,
+                    );
+                  },
+                ),
+              );
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('OTP sent successfully')),
+              );
+            } else if (state is AuthError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                ),
+              );
             }
           },
           builder: (context, state) {
@@ -110,21 +103,30 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                     SubmitButtonWidget(
-                      title: "Send OTP",
-                      ontap: () {
-                        context.read<LoginBloc>().add(
-                          SendOtpApiEvent(
-                            mobilenumber: mobilenumberController.text,
-                          ),
-                        );
-                      },
+                      title: state is AuthLoading ? "Sending..." : "Send OTP",
+                      ontap: state is AuthLoading
+                          ? null
+                          : () {
+                              if (mobilenumberController.text.length == 10) {
+                                context.read<AuthBloc>().add(
+                                      SendOTPEvent(mobilenumberController.text),
+                                    );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                        'Please enter a valid 10-digit mobile number'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            },
                     ),
                   ],
                 ),
               ),
             );
           },
-        ),
       ),
     );
   }
