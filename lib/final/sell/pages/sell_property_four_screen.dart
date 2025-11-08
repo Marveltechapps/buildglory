@@ -2,6 +2,8 @@ import 'package:buildglory/constant/constant.dart';
 import 'package:buildglory/final/sell/bloc/sell_property_bloc.dart';
 import 'package:buildglory/final/sell/bloc/sell_property_event.dart';
 import 'package:buildglory/final/sell/bloc/sell_property_state.dart';
+import 'package:buildglory/final/sell/pages/sell_property_one_screen.dart';
+import 'package:buildglory/final/sell/pages/sell_property_three_screen.dart';
 import 'package:buildglory/new/presentation/profile/widgets/custom_input_field.dart';
 import 'package:buildglory/screens/exchange/exchange_success_one_screen.dart';
 import 'package:buildglory/screens/widgets/sell_property_succes.dart';
@@ -378,9 +380,51 @@ class SellPropertyFourScreen extends StatelessWidget {
                                 Expanded(
                                   child: InkWell(
                                     onTap: () {
-                                      context.read<SellPropertyBloc>().add(
-                                        SellPropertySaveEvent(),
-                                      );
+                                        final bloc =
+                                            context.read<SellPropertyBloc>();
+                                        bloc.fullName =
+                                            fullNameController.text.trim();
+                                        bloc.mobileNumber =
+                                            mobileController.text.trim();
+                                        bloc.emailAddress =
+                                            emailController.text.trim();
+                                        bloc.propertyDescription =
+                                            SellPropertyThreeScreen
+                                                .descriptionController.text
+                                                .trim();
+                                        bloc.buildUpArea =
+                                            SellPropertyOneScreen
+                                                .builtUpAreaController.text
+                                                .trim();
+                                        bloc.carpetArea =
+                                            SellPropertyOneScreen
+                                                .carpetAreaController.text
+                                                .trim();
+                                        bloc.locality =
+                                            SellPropertyOneScreen
+                                                .localityController.text
+                                                .trim();
+                                        bloc.project =
+                                            SellPropertyOneScreen
+                                                .projectController.text
+                                                .trim();
+                                        final cityText =
+                                            SellPropertyOneScreen
+                                                .cityController.text
+                                                .trim();
+                                        if (cityText.isNotEmpty) {
+                                          bloc.selectedCity = cityText;
+                                        }
+                                        final bhkText =
+                                            SellPropertyOneScreen
+                                                .bhktypeController.text
+                                                .trim();
+                                        if (bhkText.isNotEmpty) {
+                                          bloc.selectedBhkType = bhkText;
+                                        }
+                                        bloc.add(
+                                          SellPropertySaveEvent(),
+                                        );
                                     },
                                     child: Container(
                                       height: 42,

@@ -1,84 +1,125 @@
-import 'dart:convert';
-
 import 'package:buildglory/constant/constant.dart';
 import 'package:buildglory/final/login/bloc/login_event.dart';
 import 'package:buildglory/final/login/bloc/login_state.dart';
-import 'package:buildglory/final/login/model/sendotp_response_model.dart';
-import 'package:buildglory/final/login/model/verifyotp_response_model.dart';
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:buildglory/api/apiservice.dart' as api;
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:buildglory/final/login/model/sendotp_response_model.dart';
+import 'package:buildglory/final/login/model/user_lookup_response_model.dart';
+import 'package:buildglory/final/login/model/verifyotp_response_model.dart';
+import 'package:buildglory/final/login/repository/auth_repository.dart';
 
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
-  LoginBloc() : super(LoginInitialState()) {
-    on<SendOtpApiEvent>(sendotp);
-    on<VerifyOtpApiEvent>(verifyotp);
-    on<SharedPreferenceEvent>(saveinsharedpreference);
+  LoginBloc({AuthRepository? authRepository})
+      : _authRepository = authRepository ?? AuthRepository(),
+        super(LoginInitialState()) {
+    on<SendOtpApiEvent>(_sendOtp);
+    on<ResendOtpApiEvent>(_resendOtp);
+    on<VerifyOtpApiEvent>(_verifyOtp);
+    on<LookupUserByMobileEvent>(_lookupUser);
+    on<DeleteUserByMobileEvent>(_deleteUser);
+    on<SharedPreferenceEvent>(_saveToken);
   }
 
-  saveinsharedpreference(
+  final AuthRepository _authRepository;
+
+  Future<void> _saveToken(
     SharedPreferenceEvent event,
     Emitter<LoginState> emit,
   ) async {
     emit(LoginLoadingState());
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', true);
-    await prefs.setString('token', event.token);
-    emit(SharedPreferenceSavedState(token: event.token));
-  }
-
-  sendotp(SendOtpApiEvent event, Emitter<LoginState> emit) async {
-    emit(LoginLoadingState());
     try {
-      String url = "${baseUrl}api/signin/send-otp";
-      debugPrint(url);
-      api.Response response = await api.ApiService().postRequest(
-        url,
-        json.encode({"mobileNumber": event.mobilenumber}),
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
+      await prefs.setString('token', event.token);
+      token = event.token;
+      emit(SharedPreferenceSavedState(token: event.token));
+    } catch (error) {
+      emit(
+        LoginErrorState(
+          errorMsg: 'Unable to store credentials locally. Please try again.',
+        ),
       );
-      if (response.statusCode == 200) {
-        var sendOtpResponseModel = sendOtpResponseModelFromJson(
-          response.resBody,
-        );
-        emit(
-          SendApiOtpSuccessState(sendOtpResponseModel: sendOtpResponseModel),
-        );
-      } else {
-        emit(LoginErrorState(errorMsg: response.resBody));
-      }
-    } catch (e) {
-      emit(LoginErrorState(errorMsg: ""));
     }
   }
 
-  verifyotp(VerifyOtpApiEvent event, Emitter<LoginState> emit) async {
+  Future<void> _sendOtp(
+    SendOtpApiEvent event,
+    Emitter<LoginState> emit,
+  ) async {
+    await _execute(
+      emit,
+      () => _authRepository.sendOtp(event.mobilenumber),
+      onSuccess: (SendOtpResponseModel response) =>
+          SendApiOtpSuccessState(sendOtpResponseModel: response),
+    );
+  }
+
+  Future<void> _resendOtp(
+    ResendOtpApiEvent event,
+    Emitter<LoginState> emit,
+  ) async {
+    await _execute(
+      emit,
+      () => _authRepository.resendOtp(event.mobilenumber),
+      onSuccess: (SendOtpResponseModel response) =>
+          ResendOtpSuccessState(resendOtpResponseModel: response),
+    );
+  }
+
+  Future<void> _verifyOtp(
+    VerifyOtpApiEvent event,
+    Emitter<LoginState> emit,
+  ) async {
+    await _execute(
+      emit,
+      () => _authRepository.verifyOtp(
+        mobileNumber: event.mobilenumber,
+        otp: event.otpvalue,
+      ),
+      onSuccess: (VerifyOtpResponseModel response) =>
+          VerifyApiOtpSuccessState(verifyOtpResponseModel: response),
+    );
+  }
+
+  Future<void> _lookupUser(
+    LookupUserByMobileEvent event,
+    Emitter<LoginState> emit,
+  ) async {
+    await _execute(
+      emit,
+      () => _authRepository.getUserByMobile(event.mobileNumber),
+      onSuccess: (UserLookupResponseModel response) =>
+          UserLookupSuccessState(userLookupResponseModel: response),
+    );
+  }
+
+  Future<void> _deleteUser(
+    DeleteUserByMobileEvent event,
+    Emitter<LoginState> emit,
+  ) async {
+    await _execute(
+      emit,
+      () => _authRepository.deleteUserByMobile(event.mobileNumber),
+      onSuccess: (UserLookupResponseModel response) =>
+          DeleteUserSuccessState(userLookupResponseModel: response),
+    );
+  }
+
+  Future<void> _execute<T>(
+    Emitter<LoginState> emit,
+    Future<T> Function() action, {
+    required LoginState Function(T data) onSuccess,
+  }) async {
     emit(LoginLoadingState());
     try {
-      String url = "${baseUrl}api/signin/verify-otp";
-      debugPrint(url);
-      api.Response response = await api.ApiService().postRequest(
-        url,
-        json.encode({
-          "mobileNumber": event.mobilenumber,
-          "enteredOTP": event.otpvalue,
-        }),
-      );
-      if (response.statusCode == 200) {
-        var verifyOtpResponseModel = verifyOtpResponseModelFromJson(
-          response.resBody,
-        );
-        emit(
-          VerifyApiOtpSuccessState(
-            verifyOtpResponseModel: verifyOtpResponseModel,
-          ),
-        );
-      } else {
-        emit(LoginErrorState(errorMsg: response.resBody));
-      }
-    } catch (e) {
-      emit(LoginErrorState(errorMsg: ""));
+      final result = await action();
+      emit(onSuccess(result));
+    } on ApiException catch (error) {
+      emit(LoginErrorState(errorMsg: error.message));
+    } catch (_) {
+      emit(LoginErrorState(errorMsg: 'Something went wrong. Please try again.'));
     }
   }
 }

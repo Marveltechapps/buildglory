@@ -5,14 +5,19 @@ import 'package:buildglory/final/onboard/model/onboard_model.dart';
 import 'package:buildglory/final/onboard/model/onboard_response_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:http/http.dart' as http;
+
+import '../repository/onboarding_repository.dart';
 
 class OnboardBloc extends Bloc<OnboardEvent, OnboardState> {
-  OnboardBloc() : super(OnboardInitialState()) {
+  OnboardBloc({OnboardingRepository? onboardingRepository})
+      : _repository = onboardingRepository ?? OnboardingRepository(),
+        super(OnboardInitialState()) {
     on<GetOnboardDateEvent>(getOnboarddata);
     on<NextSlideEvent>(getindex);
     on<GetOnboardDataFormApiEvent>(getdataformapi);
   }
+
+  final OnboardingRepository _repository;
 
   List<OnboardModel> onboardList = [];
   List<OnboardResponseModel> onboardResponseModel = [];
@@ -48,17 +53,14 @@ class OnboardBloc extends Bloc<OnboardEvent, OnboardState> {
   ) async {
     emit(OnboardLoadingState());
     try {
-      String url = "${baseUrl}api/onboarding/screens";
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        debugPrint(response.body.toString());
-        var result = onboardResponseModelFromJson(response.body);
-        emit(OnboardApiDataSuccessState(onboardResponseModel: result));
-      } else {
-        emit(OnboardErrorState(errorMsg: "Failed to fetch data"));
-      }
-    } catch (e) {
-      emit(OnboardErrorState(errorMsg: ""));
+      final result = await _repository.fetchScreens();
+      emit(OnboardApiDataSuccessState(onboardResponseModel: result));
+    } catch (error) {
+      emit(
+        OnboardErrorState(
+          errorMsg: error.toString().replaceAll('Exception: ', ''),
+        ),
+      );
     }
   }
 
