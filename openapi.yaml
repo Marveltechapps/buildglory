@@ -1,0 +1,546 @@
+openapi: 3.0.3
+info:
+  title: BuildGlory API
+  version: 1.0.0
+  description: >
+    HTTP endpoints consumed by the BuildGlory mobile application. All payload
+    shapes and examples are derived from the current Flutter client
+    implementation.
+servers:
+  - url: http://3.6.250.39:6000
+    description: Production server
+tags:
+  - name: Authentication
+  - name: Onboarding
+  - name: Properties
+  - name: Enquiry
+  - name: Selling
+paths:
+  /api/signin/send-otp:
+    post:
+      tags: [Authentication]
+      summary: Request a login OTP
+      operationId: sendOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendOtpRequest'
+            example:
+              mobileNumber: '9876543210'
+      responses:
+        '200':
+          description: OTP sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendOtpResponse'
+              example:
+                message: OTP sent successfully
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+  /api/signin/verify-otp:
+    post:
+      tags: [Authentication]
+      summary: Verify the OTP and authenticate the user
+      operationId: verifyOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyOtpRequest'
+            example:
+              mobileNumber: '9876543210'
+              enteredOTP: '123456'
+      responses:
+        '200':
+          description: OTP verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyOtpResponse'
+              example:
+                message: Login successful
+                userId: 6659f4c7d6baa55747c44a10
+                token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+                isVerified: true
+                name: John Doe
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/onboarding/screens:
+    get:
+      tags: [Onboarding]
+      summary: Retrieve onboarding screens
+      operationId: getOnboardingScreens
+      responses:
+        '200':
+          description: Onboarding screens fetched successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OnboardingScreen'
+              example:
+                - _id: 664cfbd3ce0a3f6fa72b1f01
+                  title: Discover Your Perfect Home
+                  description: Buy your dream home with immersive 3D tours.
+                  imageUrl: https://example.com/onboarding-1.jpg
+                  order: 1
+                  isActive: true
+                  createdAt: 2024-05-21T10:05:55.000Z
+                  updatedAt: 2024-05-21T10:05:55.000Z
+                  __v: 0
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/homepage:
+    get:
+      tags: [Properties]
+      summary: Get featured properties by category
+      operationId: getProperties
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Property category to fetch (for example `Residential` or `Commercial`)
+          example: Residential
+      responses:
+        '200':
+          description: Properties fetched successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PropertySummary'
+              example:
+                - _id: 6650a1ce2cb6f9412c4d3a77
+                  title: Luxury 3BHK Apartment
+                  type: Residential
+                  price: 12500000
+                  image: https://example.com/images/property-01.jpg
+                  sqft: 1450
+                  about: Spacious apartment with premium amenities.
+                  amenities: [Gym, Pool, 24x7 Security]
+                  layout:
+                    bedrooms: 3
+                    bathrooms: 3
+                  location:
+                    country: India
+                    state: Tamil Nadu
+                    city: Chennai
+                    locality: Velachery
+                    pincode: 600042
+                    fullAddress: 123, 4th Main Road, Velachery, Chennai
+                  createdAt: 2024-05-21T10:05:55.000Z
+                  __v: 0
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/enquiry:
+    post:
+      tags: [Enquiry]
+      summary: Submit a property enquiry
+      operationId: submitEnquiry
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactUsRequest'
+            example:
+              propertyId: 6650a1ce2cb6f9412c4d3a77
+              type: BUY
+              message: I would like to schedule a site visit this weekend.
+      responses:
+        '200':
+          description: Enquiry submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactUsResponse'
+              example:
+                message: Enquiry submitted successfully
+        '201':
+          description: Enquiry created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactUsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /api/sells:
+    post:
+      tags: [Selling]
+      summary: Create a property listing for sale
+      operationId: createPropertySale
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SellPropertyRequest'
+            encoding:
+              amenities:
+                style: form
+                explode: true
+              images:
+                style: form
+                explode: false
+            examples:
+              default:
+                summary: Example property sale payload
+                value:
+                  advertisementType: Sale
+                  propertyType: Apartment
+                  bhkType: 2 BHK
+                  builtUpArea: '1000'
+                  carpetArea: '850'
+                  location[city]: Chennai
+                  location[locality]: Guindy
+                  location[projectName]: Green Heights
+                  price: '35000000'
+                  isNegotiable: 'true'
+                  ageOfConstruction: 0-5 years
+                  facing: East
+                  ownership: Freehold
+                  furnishedStatus: Fully Furnished
+                  amenities:
+                    - Gym
+                    - Pool
+                    - Lift
+                    - Security
+                  description: Spacious 2BHK apartment with excellent connectivity.
+                  locationMapLink: https://maps.google.com/?q=Green+Heights+Guindy
+      responses:
+        '200':
+          description: Property saved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SellPropertyResponse'
+        '201':
+          description: Property created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SellPropertyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    BadRequestError:
+      description: Invalid request payload or parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: Invalid mobile number
+    UnauthorizedError:
+      description: Missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: Authentication required
+    ServerError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: Something went wrong
+  schemas:
+    SendOtpRequest:
+      type: object
+      required: [mobileNumber]
+      properties:
+        mobileNumber:
+          type: string
+          description: 10-digit mobile number to receive the OTP.
+    SendOtpResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Status message returned by the server.
+    VerifyOtpRequest:
+      type: object
+      required: [mobileNumber, enteredOTP]
+      properties:
+        mobileNumber:
+          type: string
+          description: Mobile number used to request the OTP.
+        enteredOTP:
+          type: string
+          description: One-time password entered by the user.
+    VerifyOtpResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        userId:
+          type: string
+        token:
+          type: string
+          description: JWT bearer token to authorize subsequent requests.
+        isVerified:
+          type: boolean
+        name:
+          type: string
+          nullable: true
+    OnboardingScreen:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+          format: uri
+        order:
+          type: integer
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        __v:
+          type: integer
+    PropertySummary:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+        price:
+          type: number
+          format: int64
+        image:
+          type: string
+          format: uri
+        sqft:
+          type: integer
+        about:
+          type: string
+        amenities:
+          type: array
+          items:
+            type: string
+          description: >
+            List of amenities. When sending multipart form-data, encode each
+            entry as a repeated `amenities[]` field to mirror the current mobile
+            client implementation.
+        layout:
+          $ref: '#/components/schemas/PropertyLayout'
+        location:
+          $ref: '#/components/schemas/PropertyLocation'
+        createdAt:
+          type: string
+          format: date-time
+        __v:
+          type: integer
+    PropertyLayout:
+      type: object
+      properties:
+        bedrooms:
+          type: integer
+        bathrooms:
+          type: integer
+    PropertyLocation:
+      type: object
+      properties:
+        country:
+          type: string
+        state:
+          type: string
+        city:
+          type: string
+        locality:
+          type: string
+        pincode:
+          type: string
+        fullAddress:
+          type: string
+    SellPropertyRequest:
+      type: object
+      required:
+        - advertisementType
+        - propertyType
+        - bhkType
+        - builtUpArea
+        - carpetArea
+        - price
+        - isNegotiable
+        - description
+      properties:
+        advertisementType:
+          type: string
+          description: Listing intent (for example `Sale` or `Rent`).
+        propertyType:
+          type: string
+          description: Property classification (for example `Apartment`).
+        bhkType:
+          type: string
+          description: Number of bedrooms and hall/kitchen (for example `2 BHK`).
+        builtUpArea:
+          type: string
+          description: Total built-up area in square feet.
+        carpetArea:
+          type: string
+          description: Usable carpet area in square feet.
+        location[city]:
+          type: string
+        location[locality]:
+          type: string
+        location[projectName]:
+          type: string
+        price:
+          type: string
+          description: Expected price of the property.
+        isNegotiable:
+          type: string
+          description: Indicates whether the price is negotiable (`true` or `false`).
+        ageOfConstruction:
+          type: string
+        facing:
+          type: string
+        ownership:
+          type: string
+        furnishedStatus:
+          type: string
+        amenities:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        locationMapLink:
+          type: string
+          format: uri
+        images:
+          type: array
+          items:
+            type: string
+            format: binary
+          description: Optional property images.
+    SellPropertyResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+        advertisementType:
+          type: string
+        propertyType:
+          type: string
+        bhkType:
+          type: string
+        builtUpArea:
+          type: integer
+        carpetArea:
+          type: integer
+        location:
+          $ref: '#/components/schemas/SellPropertyLocation'
+        price:
+          type: integer
+        isNegotiable:
+          type: boolean
+        ageOfConstruction:
+          type: string
+        facing:
+          type: string
+        ownership:
+          type: string
+        furnishedStatus:
+          type: string
+        amenities:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        imageURLs:
+          type: array
+          items:
+            type: string
+            format: uri
+        locationMapLink:
+          type: string
+          format: uri
+        _id:
+          type: string
+        listingId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        __v:
+          type: integer
+    SellPropertyLocation:
+      type: object
+      properties:
+        city:
+          type: string
+        locality:
+          type: string
+        projectName:
+          type: string
+    ContactUsRequest:
+      type: object
+      required: [propertyId, type, message]
+      properties:
+        propertyId:
+          type: string
+        type:
+          type: string
+          description: Enquiry type (for example `BUY`, `SELL`, `EXCHANGE`).
+        message:
+          type: string
+          description: Enquiry message entered by the user.
+    ContactUsResponse:
+      type: object
+      properties:
+        message:
+          type: string
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Human-readable error description.
