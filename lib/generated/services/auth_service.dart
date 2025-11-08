@@ -43,14 +43,29 @@ class AuthService {
       '/signin/verify-otp',
       body: {
         'mobileNumber': mobileNumber,
-        'otp': otp,
+        'enteredOTP': otp,  // Backend expects 'enteredOTP', not 'otp'
       },
       fromJson: (json) => json as Map<String, dynamic>,
     );
 
     if (response.isSuccess && response.data != null) {
+      // Backend returns: { message, userId, token, isVerified, name }
+      final data = response.data!;
+      
+      // Create User object from response
+      final user = User(
+        id: data['userId'] as String?,
+        mobileNumber: mobileNumber,
+        name: data['name'] as String?,
+        isVerified: data['isVerified'] as bool? ?? false,
+      );
+      
+      final authResponse = AuthResponse(
+        token: data['token'] as String,
+        user: user,
+      );
+      
       // Save token to auth manager
-      final authResponse = AuthResponse.fromJson(response.data!);
       await _apiClient.authManager.saveToken(authResponse.token);
       return ApiResponse.success(authResponse);
     }

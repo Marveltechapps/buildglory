@@ -47,6 +47,10 @@ class ApiClient {
       final uri = _buildUri(endpoint, queryParameters);
       final headers = await _getHeaders();
 
+      // Debug logging
+      print('API POST Request: $uri');
+      print('API POST Body: ${jsonEncode(body)}');
+
       final response = await _client.post(
         uri,
         headers: headers,
@@ -54,6 +58,7 @@ class ApiClient {
       );
       return _handleResponse<T>(response, fromJson);
     } catch (e) {
+      print('API POST Error: $e');
       return ApiResponse.error(ApiError(
         message: 'Network error: $e',
         statusCode: 0,
@@ -175,6 +180,10 @@ class ApiClient {
     final statusCode = response.statusCode;
 
     try {
+      // Debug logging
+      print('API Response Status: $statusCode');
+      print('API Response Body: ${response.body}');
+
       // Parse response body
       final dynamic jsonData = response.body.isNotEmpty
           ? jsonDecode(response.body)
@@ -197,6 +206,7 @@ class ApiClient {
         error: jsonData,
       ));
     } catch (e) {
+      print('API Response Parse Error: $e');
       return ApiResponse.error(ApiError(
         message: 'Failed to parse response: $e',
         statusCode: statusCode,
