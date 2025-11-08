@@ -197,30 +197,37 @@ class _OtpScreenState extends State<OtpScreen> {
                                 ),
                               ),
 
-                              const SizedBox(height: 24),
+                                const SizedBox(height: 24),
 
-                              // Resend OTP Button
-                              GestureDetector(
-                                onTap: widget.onResendOtp,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 9,
-                                    vertical: 6,
-                                  ),
-                                  child: const Text(
-                                    'Resend OTP',
-                                    style: TextStyle(
-                                      color: Color(0xFF155DFC),
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                      fontFamily: 'Arial',
+                                // Resend OTP Button
+                                GestureDetector(
+                                  onTap: () {
+                                    context.read<LoginBloc>().add(
+                                          ResendOtpApiEvent(
+                                            mobilenumber: widget.phoneNumber,
+                                          ),
+                                        );
+                                    widget.onResendOtp?.call();
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 9,
+                                      vertical: 6,
+                                    ),
+                                    child: const Text(
+                                      'Resend OTP',
+                                      style: TextStyle(
+                                        color: Color(0xFF155DFC),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400,
+                                        fontFamily: 'Arial',
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
                             ],
                           ),
                         ),
