@@ -1,64 +1,97 @@
 import 'package:buildglory/constant/constant.dart';
 import 'package:buildglory/final/home/pages/home_main_screen.dart';
-import 'package:buildglory/final/onboard/pages/onboard_screen.dart';
-import 'package:buildglory/final/splash/bloc/splash_bloc.dart';
-import 'package:buildglory/final/splash/bloc/splash_event.dart';
-import 'package:buildglory/final/splash/bloc/splash_state.dart';
+import 'package:buildglory/final/login/pages/login_screen.dart';
+import 'package:buildglory/generated/bloc/bloc_exports.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:async';
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  StreamSubscription? _authSubscription;
+  bool _hasNavigated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAuthAndNavigate();
+  }
+
+  Future<void> _checkAuthAndNavigate() async {
+    // Wait for splash animation (2.9 seconds as per original)
+    await Future.delayed(const Duration(milliseconds: 2900));
+
+    if (!mounted || _hasNavigated) return;
+
+    final authBloc = context.read<AuthBloc>();
+
+    // Listen to auth state changes
+    _authSubscription = authBloc.stream.listen((state) {
+      if (_hasNavigated || !mounted) return;
+
+      if (state is Authenticated) {
+        _hasNavigated = true;
+        _authSubscription?.cancel();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeMainScreen()),
+        );
+      } else if (state is Unauthenticated || state is AuthError) {
+        _hasNavigated = true;
+        _authSubscription?.cancel();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      }
+    });
+
+    // Check current state
+    final currentState = authBloc.state;
+    if (currentState is Authenticated) {
+      if (!_hasNavigated && mounted) {
+        _hasNavigated = true;
+        _authSubscription?.cancel();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeMainScreen()),
+        );
+      }
+    } else if (currentState is Unauthenticated || currentState is AuthError) {
+      if (!_hasNavigated && mounted) {
+        _hasNavigated = true;
+        _authSubscription?.cancel();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      }
+    }
+    // If state is AuthLoading, wait for the stream listener to handle it
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => SplashBloc(),
-      child: BlocConsumer<SplashBloc, SplashState>(
-        listener: (context, state) {
-          if (state is NavigateSuccessState) {
-            context.read<SplashBloc>().add(GetSharedPreferenceEvent());
-          } else if (state is GetsharedPreferenceSuccessState) {
-            if (state.isloggedin) {
-              token = state.token;
-              Future.delayed(const Duration(milliseconds: 2900), () {
-                if (!context.mounted) return;
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return HomeMainScreen();
-                    },
-                  ),
-                );
-              });
-            } else {
-              Future.delayed(const Duration(milliseconds: 2900), () {
-                if (!context.mounted) return;
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return OnboardScreen();
-                    },
-                  ),
-                );
-              });
-            }
-          }
-        },
-        builder: (context, state) {
-          if (state is SplashInitialState) {
-            context.read<SplashBloc>().add(NavigateEvent());
-          }
-          return Scaffold(
-            backgroundColor: Colors.white,
-            body: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [Image.asset(splashGif), SizedBox()],
-            ),
-          );
-        },
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(splashGif),
+          const SizedBox(),
+        ],
       ),
     );
   }

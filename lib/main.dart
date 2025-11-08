@@ -43,72 +43,12 @@ class MyApp extends StatelessWidget {
 }
 
 /// Splash Screen Wrapper
-class SplashScreenWrapper extends StatefulWidget {
+class SplashScreenWrapper extends StatelessWidget {
   const SplashScreenWrapper({super.key});
 
   @override
-  State<SplashScreenWrapper> createState() => _SplashScreenWrapperState();
-}
-
-class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
-  @override
-  void initState() {
-    super.initState();
-    _navigateToHome();
-  }
-
-  Future<void> _navigateToHome() async {
-    // Wait for splash screen duration + auth check
-    await Future.delayed(const Duration(seconds: 2));
-    
-    if (!mounted) return;
-
-    final authBloc = context.read<AuthBloc>();
-    
-    // Wait for auth state to be determined (not loading)
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    if (!mounted) return;
-
-    // Listen to auth state changes
-    final subscription = authBloc.stream.listen((state) {
-      if (!mounted) return;
-
-      if (state is Authenticated) {
-        // User is logged in, go to YOUR home screen
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
-      } else if (state is Unauthenticated || state is AuthError) {
-        // User not logged in, go to YOUR login screen
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
-      }
-    });
-
-    // Check current state immediately
-    final currentState = authBloc.state;
-    if (currentState is Authenticated) {
-      subscription.cancel();
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
-      }
-    } else if (currentState is Unauthenticated || currentState is AuthError) {
-      subscription.cancel();
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
-      }
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    // Use YOUR existing splash screen
+    // Use YOUR existing splash screen which now handles auth navigation
     return const SplashScreen();
   }
 }
