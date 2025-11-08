@@ -12,6 +12,12 @@ class SellErrorState extends SellPropertyState {
   SellErrorState({required this.errorMsg});
 }
 
+class NavigateNextScreenState extends SellPropertyState {
+  final String screenName;
+
+  NavigateNextScreenState({required this.screenName});
+}
+
 class SelectedOptionSuccessState extends SellPropertyState {
   final String title;
   final String selectedValue;

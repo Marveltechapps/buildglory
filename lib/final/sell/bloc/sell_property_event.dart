@@ -8,3 +8,9 @@ class SelectOptionsEvent extends SellPropertyEvent {
 }
 
 class SellPropertySaveEvent extends SellPropertyEvent {}
+
+class NavigateNextScreenEvent extends SellPropertyEvent {
+  final String screenName;
+
+  NavigateNextScreenEvent({required this.screenName});
+}

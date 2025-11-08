@@ -1,3 +1,4 @@
+import 'package:buildglory/generated/models/exchange.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../services/exchange_service.dart';
 import 'exchange_event.dart';

@@ -10,6 +10,7 @@ class SellPropertyBloc extends Bloc<SellPropertyEvent, SellPropertyState> {
   SellPropertyBloc() : super(SellInitialState()) {
     on<SellPropertySaveEvent>(savesellpropertyapi);
     on<SelectOptionsEvent>(selectvalue);
+    on<NavigateNextScreenEvent>(navigatenextscreen);
   }
 
   String selectedAdvertisementType = '';
@@ -26,12 +27,49 @@ class SellPropertyBloc extends Bloc<SellPropertyEvent, SellPropertyState> {
   String facing = '';
   String ownership = '';
   String furnishedStatus = '';
-  List<String> amenities = [];
+  List<String> amenities = [
+    'Swimming Pool',
+    'Gym',
+    'Parking',
+    'Security',
+    'Power Backup',
+    'Lift',
+    'Garden',
+    'Playground',
+    'Clubhouse',
+    'Maintenance',
+    'Water Supply',
+    'Intercom',
+  ];
   String propertyDescription = '';
   String fullName = '';
   String mobileNumber = '';
   String emailAddress = '';
   bool termsandconditon = false;
+  List<String> amenitiesSelectedList = [];
+
+  // static Map<String, bool> amenities = {
+  //   'Swimming Pool': false,
+  //   'Gym': false,
+  //   'Parking': false,
+  //   'Security': false,
+  //   'Power Backup': false,
+  //   'Lift': false,
+  //   'Garden': false,
+  //   'Playground': false,
+  //   'Clubhouse': false,
+  //   'Maintenance': false,
+  //   'Water Supply': false,
+  //   'Intercom': false,
+  // };
+
+  navigatenextscreen(
+    NavigateNextScreenEvent event,
+    Emitter<SellPropertyState> emit,
+  ) {
+    emit(SellLoadingState());
+    emit(NavigateNextScreenState(screenName: event.screenName));
+  }
 
   selectvalue(SelectOptionsEvent event, Emitter<SellPropertyState> emit) {
     emit(SellLoadingState());

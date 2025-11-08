@@ -105,7 +105,7 @@ class LoginScreen extends StatelessWidget {
                     SubmitButtonWidget(
                       title: state is AuthLoading ? "Sending..." : "Send OTP",
                       ontap: state is AuthLoading
-                          ? null
+                          ? (){} // provide empty function instead of null
                           : () {
                               if (mobilenumberController.text.length == 10) {
                                 context.read<AuthBloc>().add(

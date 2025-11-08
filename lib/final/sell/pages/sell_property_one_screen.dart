@@ -2,6 +2,7 @@ import 'package:buildglory/constant/constant.dart';
 import 'package:buildglory/final/sell/bloc/sell_property_bloc.dart';
 import 'package:buildglory/final/sell/bloc/sell_property_event.dart';
 import 'package:buildglory/final/sell/bloc/sell_property_state.dart';
+import 'package:buildglory/final/sell/pages/sell_property_two_screen.dart';
 import 'package:buildglory/new/presentation/profile/widgets/custom_input_field.dart';
 import 'package:buildglory/screens/widgets/sell_property_two.dart';
 import 'package:flutter/material.dart';
@@ -91,6 +92,21 @@ class SellPropertyOneScreen extends StatelessWidget {
                   state.selectedValue;
               cityController.text = state.selectedValue;
             }
+          } else if (state is NavigateNextScreenState) {
+            context.read<SellPropertyBloc>().buildUpArea =
+                builtUpAreaController.text;
+            context.read<SellPropertyBloc>().carpetArea =
+                carpetAreaController.text;
+            context.read<SellPropertyBloc>().locality = localityController.text;
+            context.read<SellPropertyBloc>().project = projectController.text;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) {
+                  return SellPropertyTwoScreen();
+                },
+              ),
+            );
           }
         },
         builder: (context, state) {
@@ -576,13 +592,8 @@ class SellPropertyOneScreen extends StatelessWidget {
                               height: 42,
                               child: ElevatedButton(
                                 onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) {
-                                        return SellPropertyTwo();
-                                      },
-                                    ),
+                                  context.read<SellPropertyBloc>().add(
+                                    NavigateNextScreenEvent(screenName: ""),
                                   );
                                 },
                                 style: ElevatedButton.styleFrom(
