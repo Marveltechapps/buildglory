@@ -22,7 +22,7 @@ class BlocProviderSetup extends StatelessWidget {
         ApiClientFactory(
           baseUrl: const String.fromEnvironment(
             'API_BASE_URL',
-            defaultValue: 'http://localhost:6000/api',
+            defaultValue: 'http://3.6.250.39:6000/api',
           ),
         );
 

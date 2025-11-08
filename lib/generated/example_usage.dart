@@ -10,7 +10,7 @@ import 'api_exports.dart';
 void main() async {
   // Initialize API client
   final api = ApiClientFactory(
-    baseUrl: 'http://localhost:6000/api',
+    baseUrl: 'http://3.6.250.39:6000/api',
   );
 
   try {

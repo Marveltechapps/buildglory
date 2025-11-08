@@ -31,7 +31,7 @@ import 'package:buildglory/generated/api_exports.dart';
 void main() {
   // Create API client factory
   final api = ApiClientFactory(
-    baseUrl: 'http://localhost:6000/api',
+    baseUrl: 'http://3.6.250.39:6000/api',
   );
 }
 ```
