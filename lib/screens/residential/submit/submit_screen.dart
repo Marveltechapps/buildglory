@@ -7,7 +7,29 @@ import 'package:flutter_svg/svg.dart';
 
 class SimpleConfirmationPage extends StatelessWidget {
   final String colorcode;
-  const SimpleConfirmationPage({super.key, required this.colorcode});
+  final String propertyTitle;
+  final String propertyLocation;
+  final String propertyPrice;
+  final String propertyImageUrl;
+  final String userName;
+  final String userPhone;
+  final String userEmail;
+  final String message;
+  final String referenceNumber;
+
+  const SimpleConfirmationPage({
+    super.key,
+    required this.colorcode,
+    required this.propertyTitle,
+    required this.propertyLocation,
+    required this.propertyPrice,
+    required this.propertyImageUrl,
+    required this.userName,
+    required this.userPhone,
+    required this.userEmail,
+    required this.message,
+    required this.referenceNumber,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -51,10 +73,10 @@ class SimpleConfirmationPage extends StatelessWidget {
                       // Thank You Text
                       Container(
                         width: 342,
-                        child: const Text(
-                          'Thank You! 🎉',
+                        child: Text(
+                          'Thank You, $userName! 🎉',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 21,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF101828),
@@ -109,13 +131,19 @@ class SimpleConfirmationPage extends StatelessWidget {
                         ),
                         child: Column(
                           children: [
-                            // Property Image
                             Container(
-                              // padding: const EdgeInsets.symmetric(vertical: 10),
                               child: Image.network(
-                                'https://api.builder.io/api/v1/image/assets/3eed9e34f3904b5687afb7d840d6be68/feb6f1ffed4c9f94c3c6361be5f92b841b6c682e?placeholderIfAbsent=true',
+                                propertyImageUrl.isNotEmpty
+                                    ? propertyImageUrl
+                                    : 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=800&q=60',
                                 width: double.infinity,
                                 fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  height: 180,
+                                  color: Colors.grey.shade200,
+                                  child: const Icon(
+                                      Icons.image_not_supported_outlined),
+                                ),
                               ),
                             ),
                             // Property Details
@@ -126,9 +154,9 @@ class SimpleConfirmationPage extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   // Property Name
-                                  const Text(
-                                    'Phoenix Meadows Villa',
-                                    style: TextStyle(
+                                  Text(
+                                    propertyTitle,
+                                    style: const TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.w700,
                                       color: Color(0xFF1A1A1A),
@@ -147,10 +175,10 @@ class SimpleConfirmationPage extends StatelessWidget {
                                         fit: BoxFit.contain,
                                       ),
                                       const SizedBox(width: 8),
-                                      const Expanded(
+                                      Expanded(
                                         child: Text(
-                                          'OMR (IT Corridor), Chennai',
-                                          style: TextStyle(
+                                          propertyLocation,
+                                          style: const TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w400,
                                             color: Color(0xFF4A5565),
@@ -163,9 +191,9 @@ class SimpleConfirmationPage extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 8),
                                   // Price
-                                  const Text(
-                                    '₹1.2 Crores',
-                                    style: TextStyle(
+                                  Text(
+                                    propertyPrice,
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,
                                       color: Color(0xFF155DFC),
@@ -235,9 +263,9 @@ class SimpleConfirmationPage extends StatelessWidget {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      const Text(
-                                        'dacasc',
-                                        style: TextStyle(
+                                      Text(
+                                        userName,
+                                        style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w400,
                                           color: Color(0xFF364153),
@@ -285,9 +313,9 @@ class SimpleConfirmationPage extends StatelessWidget {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      const Text(
-                                        '9039399393',
-                                        style: TextStyle(
+                                      Text(
+                                        userPhone,
+                                        style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w400,
                                           color: Color(0xFF364153),
@@ -309,6 +337,89 @@ class SimpleConfirmationPage extends StatelessWidget {
                                 ),
                               ],
                             ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 35,
+                                  height: 35,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(17.5),
+                                    color: const Color(0xFFEFF6FF),
+                                  ),
+                                  child: Center(
+                                    child: SvgPicture.asset(
+                                      mailgreyIcon,
+                                      width: 17,
+                                      height: 17,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        userEmail,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w400,
+                                          color: Color(0xFF364153),
+                                          fontFamily: 'Arial',
+                                        ),
+                                      ),
+                                      const Text(
+                                        'Email Address',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w400,
+                                          color: Color(0xFF6A7282),
+                                          fontFamily: 'Arial',
+                                          height: 1.0,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (message.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Message Shared',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF6A7282),
+                                  fontFamily: 'Arial',
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  color: const Color(0xFFF9FAFB),
+                                  border: Border.all(
+                                    color: const Color(0xFFE5E7EB),
+                                  ),
+                                ),
+                                padding: const EdgeInsets.all(12),
+                                child: Text(
+                                  message,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w400,
+                                    color: Color(0xFF364153),
+                                    fontFamily: 'Arial',
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -553,7 +664,6 @@ class SimpleConfirmationPage extends StatelessWidget {
 
                       const SizedBox(height: 16),
 
-                      // Reference Number Card
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
@@ -582,10 +692,10 @@ class SimpleConfirmationPage extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
-                              'REF-955399',
+                            Text(
+                              referenceNumber,
                               textAlign: TextAlign.center,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w400,
                                 color: Color(0xFF155DFC),

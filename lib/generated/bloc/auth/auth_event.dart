@@ -52,6 +52,16 @@ class LoadUserProfileEvent extends AuthEvent {
   const LoadUserProfileEvent();
 }
 
+class SPEvent extends AuthEvent {
+  final String token;
+
+  const SPEvent({required this.token});
+}
+
+class DummyEvent extends AuthEvent {
+  const DummyEvent();
+}
+
 /// Update user profile
 class UpdateProfileEvent extends AuthEvent {
   final String? name;
@@ -78,3 +88,12 @@ class ClearAuthErrorEvent extends AuthEvent {
   const ClearAuthErrorEvent();
 }
 
+/// Upload profile image from device
+class UploadProfileImageEvent extends AuthEvent {
+  final String filePath;
+
+  const UploadProfileImageEvent(this.filePath);
+
+  @override
+  List<Object?> get props => [filePath];
+}

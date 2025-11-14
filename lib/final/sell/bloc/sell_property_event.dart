@@ -14,3 +14,5 @@ class NavigateNextScreenEvent extends SellPropertyEvent {
 
   NavigateNextScreenEvent({required this.screenName});
 }
+
+class ClearSellPropertyDataEvent extends SellPropertyEvent {}

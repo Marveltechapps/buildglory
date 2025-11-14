@@ -4,13 +4,24 @@ import 'package:flutter_svg/svg.dart';
 import 'custom_input_field.dart';
 
 class ContactForm extends StatefulWidget {
-  const ContactForm({super.key});
+  final String? initialFullName;
+  final String? initialEmail;
+  final String? initialPhone;
+  final String? initialMessage;
+
+  const ContactForm({
+    super.key,
+    this.initialFullName,
+    this.initialEmail,
+    this.initialPhone,
+    this.initialMessage,
+  });
 
   @override
-  State<ContactForm> createState() => _ContactFormState();
+  State<ContactForm> createState() => ContactFormState();
 }
 
-class _ContactFormState extends State<ContactForm> {
+class ContactFormState extends State<ContactForm> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -20,10 +31,10 @@ class _ContactFormState extends State<ContactForm> {
   @override
   void initState() {
     super.initState();
-    // Set default values as shown in design
-    _fullNameController.text = 'dacasc';
-    _emailController.text = 'dacasc';
-    _phoneController.text = 'dacasc';
+    _fullNameController.text = widget.initialFullName ?? '';
+    _emailController.text = widget.initialEmail ?? '';
+    _phoneController.text = widget.initialPhone ?? '';
+    _messageController.text = widget.initialMessage ?? '';
   }
 
   @override
@@ -60,6 +71,7 @@ class _ContactFormState extends State<ContactForm> {
                 isRequired: true,
                 controller: _emailController,
                 iconUrl: mailgreyIcon,
+                keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
 
@@ -69,10 +81,10 @@ class _ContactFormState extends State<ContactForm> {
                 isRequired: true,
                 controller: _phoneController,
                 iconUrl: callgreyIcon,
+                keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 16),
 
-              // Message Field
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -95,26 +107,40 @@ class _ContactFormState extends State<ContactForm> {
                         width: 1,
                       ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 8, 14, 91),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SvgPicture.asset(chatgreyIcon, width: 18, height: 18),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text(
-                              'Tell us more about your requireme nts...',
-                              style: TextStyle(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(14, 12, 0, 0),
+                          child:
+                              SvgPicture.asset(chatgreyIcon, width: 18, height: 18),
+                        ),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _messageController,
+                            maxLines: 5,
+                            minLines: 4,
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              hintText: 'Tell us more about your requirements...',
+                              hintStyle: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                                 color: Color(0xFF717182),
                                 fontFamily: 'Arial',
                               ),
+                              contentPadding:
+                                  EdgeInsets.fromLTRB(8, 12, 14, 12),
+                            ),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF1A1A1A),
+                              fontFamily: 'Arial',
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -145,5 +171,18 @@ class _ContactFormState extends State<ContactForm> {
         ),
       ),
     );
+  }
+
+  bool validate() {
+    return _formKey.currentState?.validate() ?? false;
+  }
+
+  Map<String, String> getFormData() {
+    return {
+      'fullName': _fullNameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'phone': _phoneController.text.trim(),
+      'message': _messageController.text.trim(),
+    };
   }
 }

@@ -18,6 +18,150 @@ class SellPropertyTwoScreen extends StatelessWidget {
   static TextEditingController furnishedstatusController =
       TextEditingController();
 
+  // Age of Construction options
+  final List<String> ageOfConstructionOptions = const [
+    '0-1 years',
+    '1-5 years',
+    '5-10 years',
+    '10-15 years',
+    '15-20 years',
+    '20-25 years',
+    '25+ years',
+    'Under Construction',
+  ];
+
+  // Facing options
+  final List<String> facingOptions = const [
+    'North',
+    'South',
+    'East',
+    'West',
+    'North-East',
+    'North-West',
+    'South-East',
+    'South-West',
+  ];
+
+  // Ownership options
+  final List<String> ownershipOptions = const [
+    'Freehold',
+    'Leasehold',
+    'Co-operative',
+    'Power of Attorney',
+  ];
+
+  // Furnished Status options
+  final List<String> furnishedStatusOptions = const [
+    'Fully Furnished',
+    'Semi Furnished',
+    'Unfurnished',
+  ];
+
+  void _showOptionsBottomSheet(
+    BuildContext context,
+    String title,
+    List<String> options,
+    TextEditingController controller,
+    SellPropertyBloc bloc,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.6,
+            minChildSize: 0.3,
+            maxChildSize: 0.9,
+            expand: false,
+            builder: (context, scrollController) {
+              return Column(
+                children: [
+                  // Handle bar
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(top: 10, bottom: 20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5E7EB),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  // Title
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Text(
+                      'Select $title',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0A0A0A),
+                        fontFamily: 'Arial',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Options List
+                  Expanded(
+                    child: ListView.builder(
+                      controller: scrollController,
+                      itemCount: options.length,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      itemBuilder: (context, index) {
+                        final option = options[index];
+                        final isSelected = controller.text == option;
+                        
+                        return ListTile(
+                          title: Text(
+                            option,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
+                              color: isSelected ? const Color(0xFF155DFC) : const Color(0xFF0A0A0A),
+                              fontFamily: 'Arial',
+                            ),
+                          ),
+                          trailing: isSelected
+                              ? const Icon(
+                                  Icons.check_circle,
+                                  color: Color(0xFF155DFC),
+                                )
+                              : null,
+                          onTap: () {
+                            controller.text = option;
+                            
+                            // Update bloc based on field type
+                            if (title == 'Age of Construction') {
+                              bloc.ageOfConstrution = option;
+                            } else if (title == 'Facing') {
+                              bloc.facing = option;
+                            } else if (title == 'Ownership') {
+                              bloc.ownership = option;
+                            } else if (title == 'Furnished Status') {
+                              bloc.furnishedStatus = option;
+                            }
+                            
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  // Bottom padding for safe area
+                  const SizedBox(height: 10),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildHeader(context) {
     return Container(
       decoration: const BoxDecoration(
@@ -160,9 +304,12 @@ class SellPropertyTwoScreen extends StatelessWidget {
                 child: Checkbox(
                   value: sellpropertybloc.priceNegotiable,
                   onChanged: (value) {
-                    // setState(() {
-                    //   priceNegotiable = value ?? false;
-                    // });
+                    sellpropertybloc.add(
+                      SelectOptionsEvent(
+                        title: "PriceNegotiable",
+                        selectedValue: (value ?? false).toString(),
+                      ),
+                    );
                   },
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   visualDensity: VisualDensity.compact,
@@ -189,7 +336,7 @@ class SellPropertyTwoScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAdditionalDetailsCard() {
+  Widget _buildAdditionalDetailsCard(BuildContext context, SellPropertyBloc bloc) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
@@ -212,42 +359,86 @@ class SellPropertyTwoScreen extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          CustomInputField(
-            label: 'Age of Construction',
-            placeholder: 'Select age',
-            readonly: true,
-            controller: ageofconstructionController,
+          GestureDetector(
+            onTap: () => _showOptionsBottomSheet(
+              context,
+              'Age of Construction',
+              ageOfConstructionOptions,
+              ageofconstructionController,
+              bloc,
+            ),
+            child: AbsorbPointer(
+              child: CustomInputField(
+                label: 'Age of Construction',
+                placeholder: 'Select age',
+                readonly: true,
+                controller: ageofconstructionController,
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: CustomInputField(
-                  label: 'Facing',
-                  placeholder: 'Select facing',
-                  readonly: true,
-                  controller: facingController,
+                child: GestureDetector(
+                  onTap: () => _showOptionsBottomSheet(
+                    context,
+                    'Facing',
+                    facingOptions,
+                    facingController,
+                    bloc,
+                  ),
+                  child: AbsorbPointer(
+                    child: CustomInputField(
+                      label: 'Facing',
+                      placeholder: 'Select facing',
+                      readonly: true,
+                      controller: facingController,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
 
               Expanded(
-                child: CustomInputField(
-                  label: 'Ownership',
-                  placeholder: 'Select type',
-                  readonly: true,
-                  controller: ownershipController,
+                child: GestureDetector(
+                  onTap: () => _showOptionsBottomSheet(
+                    context,
+                    'Ownership',
+                    ownershipOptions,
+                    ownershipController,
+                    bloc,
+                  ),
+                  child: AbsorbPointer(
+                    child: CustomInputField(
+                      label: 'Ownership',
+                      placeholder: 'Select type',
+                      readonly: true,
+                      controller: ownershipController,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
 
-          CustomInputField(
-            label: 'Furnished Status',
-            placeholder: 'Select status',
-            readonly: true,
-            controller: furnishedstatusController,
+          GestureDetector(
+            onTap: () => _showOptionsBottomSheet(
+              context,
+              'Furnished Status',
+              furnishedStatusOptions,
+              furnishedstatusController,
+              bloc,
+            ),
+            child: AbsorbPointer(
+              child: CustomInputField(
+                label: 'Furnished Status',
+                placeholder: 'Select status',
+                readonly: true,
+                controller: furnishedstatusController,
+              ),
+            ),
           ),
         ],
       ),
@@ -369,7 +560,7 @@ class SellPropertyTwoScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomButtons(context) {
+  Widget _buildBottomButtons(SellPropertyBloc sellPropertyBloc, context) {
     return Row(
       children: [
         Expanded(
@@ -415,12 +606,91 @@ class SellPropertyTwoScreen extends StatelessWidget {
             ),
             child: TextButton(
               onPressed: () {
-                debugPrint("Continue");
+                final bloc = sellPropertyBloc;
+                
+                // Validation
+                if (expectedpriceController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter Expected Price'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                  return;
+                }
+                
+                // Check if price is a valid number
+                final price = double.tryParse(expectedpriceController.text.replaceAll(',', ''));
+                if (price == null || price <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a valid price'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                  return;
+                }
+                
+                if (ageofconstructionController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please select Age of Construction'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                  return;
+                }
+                
+                if (facingController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please select Facing direction'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                  return;
+                }
+                
+                if (ownershipController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please select Ownership type'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                  return;
+                }
+                
+                if (furnishedstatusController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please select Furnished Status'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                  return;
+                }
+                
+                // Save data to bloc before navigating
+                bloc.expectedPrice = expectedpriceController.text;
+                bloc.ageOfConstrution = ageofconstructionController.text;
+                bloc.facing = facingController.text;
+                bloc.ownership = ownershipController.text;
+                bloc.furnishedStatus = furnishedstatusController.text;
+
+                debugPrint("✅ Screen 2 validation passed");
+                debugPrint("Expected Price: ${expectedpriceController.text}");
+                debugPrint("Age of Construction: ${ageofconstructionController.text}");
+                debugPrint("Amenities: ${bloc.amenitiesSelectedList}");
+
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) {
-                      return SellPropertyThreeScreen();
+                      return BlocProvider.value(
+                        value: bloc,
+                        child: SellPropertyThreeScreen(),
+                      );
                     },
                   ),
                 );
@@ -452,15 +722,20 @@ class SellPropertyTwoScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => SellPropertyBloc(),
-      child: BlocConsumer<SellPropertyBloc, SellPropertyState>(
+    return BlocConsumer<SellPropertyBloc, SellPropertyState>(
         listener: (context, state) {
           if (state is SelectedOptionSuccessState) {
             if (state.title == "Amenities") {
-              context.read<SellPropertyBloc>().amenitiesSelectedList.add(
-                state.selectedValue,
-              );
+              final bloc = context.read<SellPropertyBloc>();
+              // Toggle amenity selection
+              if (bloc.amenitiesSelectedList.contains(state.selectedValue)) {
+                bloc.amenitiesSelectedList.remove(state.selectedValue);
+              } else {
+                bloc.amenitiesSelectedList.add(state.selectedValue);
+              }
+            } else if (state.title == "PriceNegotiable") {
+              context.read<SellPropertyBloc>().priceNegotiable =
+                  state.selectedValue == "true";
             }
           }
         },
@@ -480,13 +755,14 @@ class SellPropertyTwoScreen extends StatelessWidget {
                           children: [
                             _buildPricingCard(context.read<SellPropertyBloc>()),
                             const SizedBox(height: 20),
-                            _buildAdditionalDetailsCard(),
+                            _buildAdditionalDetailsCard(context, context.read<SellPropertyBloc>()),
                             const SizedBox(height: 20),
                             _buildAmenitiesCard(
                               context.read<SellPropertyBloc>(),
                             ),
                             const SizedBox(height: 18),
-                            _buildBottomButtons(context),
+                            _buildBottomButtons(
+                                context.read<SellPropertyBloc>(), context),
                           ],
                         ),
                       ),
@@ -497,7 +773,6 @@ class SellPropertyTwoScreen extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
+      );
   }
 }

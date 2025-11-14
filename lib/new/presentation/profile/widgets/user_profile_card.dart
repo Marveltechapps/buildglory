@@ -33,23 +33,7 @@ class UserProfileCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              color: const Color(0xFFF3F4F6),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
-              child: Image.network(
-                avatarUrl,
-                width: 56,
-                height: 56,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
+          _buildAvatar(),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -101,6 +85,50 @@ class UserProfileCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar() {
+    final bool hasImage =
+        avatarUrl.trim().isNotEmpty && avatarUrl.trim().toLowerCase() != 'null';
+
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        color: const Color(0xFFF3F4F6),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: hasImage
+            ? Image.network(
+                avatarUrl,
+                width: 56,
+                height: 56,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _buildFallbackIcon(),
+              )
+            : _buildFallbackIcon(),
+      ),
+    );
+  }
+
+  Widget _buildFallbackIcon() {
+    return Container(
+      color: const Color(0xFFE7E9F0),
+      child: Center(
+        child: SvgPicture.asset(
+          profileblueIcon,
+          width: 28,
+          height: 28,
+          fit: BoxFit.contain,
+          colorFilter: const ColorFilter.mode(
+            Color(0xFF155DFC),
+            BlendMode.srcIn,
+          ),
+        ),
       ),
     );
   }

@@ -3,7 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class PropertyCard extends StatelessWidget {
-  const PropertyCard({super.key});
+  final String title;
+  final String location;
+  final String price;
+  final String imageUrl;
+
+  const PropertyCard({
+    super.key,
+    required this.title,
+    required this.location,
+    required this.price,
+    required this.imageUrl,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,9 +40,15 @@ class PropertyCard extends StatelessWidget {
               topRight: Radius.circular(12),
             ),
             child: Image.network(
-              'https://api.builder.io/api/v1/image/assets/3eed9e34f3904b5687afb7d840d6be68/feb6f1ffed4c9f94c3c6361be5f92b841b6c682e?placeholderIfAbsent=true',
-              // width: double.infinity,
+              imageUrl.isNotEmpty
+                  ? imageUrl
+                  : 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=800&q=60',
               fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                color: Colors.grey.shade200,
+                height: 180,
+                child: const Icon(Icons.image_not_supported_outlined),
+              ),
             ),
           ),
           // Property Details
@@ -41,8 +58,8 @@ class PropertyCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Property Title
-                const Text(
-                  'Phoenix Meadows Villa',
+                Text(
+                  title,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -57,9 +74,9 @@ class PropertyCard extends StatelessWidget {
                   children: [
                     SvgPicture.asset(locationgreyIcon, width: 14, height: 14),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'OMR (IT Corridor), Chennai',
+                        location,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
@@ -73,8 +90,8 @@ class PropertyCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 // Price
-                const Text(
-                  '₹1.2 Crores',
+                Text(
+                  price,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,

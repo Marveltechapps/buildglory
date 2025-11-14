@@ -4,12 +4,13 @@ import 'auth_manager.dart';
 
 /// Production-ready auth manager using SharedPreferences for persistent storage
 class SecureAuthManager implements AuthManager {
-  static const String _tokenKey = 'jwt_token';
+  static const String _tokenKey = 'token';
   static const String _refreshTokenKey = 'refresh_token';
   static const String _tokenExpiryKey = 'token_expiry';
-  
-  final StreamController<String?> _tokenController = StreamController<String?>.broadcast();
-  
+
+  final StreamController<String?> _tokenController =
+      StreamController<String?>.broadcast();
+
   /// Stream of token changes
   Stream<String?> get tokenStream => _tokenController.stream;
 
@@ -18,7 +19,7 @@ class SecureAuthManager implements AuthManager {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(_tokenKey);
-      
+
       // Check if token is expired
       if (token != null) {
         final expiry = prefs.getInt(_tokenExpiryKey);
@@ -31,7 +32,7 @@ class SecureAuthManager implements AuthManager {
           }
         }
       }
-      
+
       return token;
     } catch (e) {
       // If there's an error reading from storage, return null
@@ -40,23 +41,25 @@ class SecureAuthManager implements AuthManager {
   }
 
   @override
-  Future<void> saveToken(String token, {String? refreshToken, DateTime? expiresAt}) async {
+  Future<void> saveToken(String token,
+      {String? refreshToken, DateTime? expiresAt}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_tokenKey, token);
-      
+
       if (refreshToken != null) {
         await prefs.setString(_refreshTokenKey, refreshToken);
       }
-      
+
       if (expiresAt != null) {
         await prefs.setInt(_tokenExpiryKey, expiresAt.millisecondsSinceEpoch);
       } else {
         // Default expiry: 7 days from now
         final defaultExpiry = DateTime.now().add(const Duration(days: 7));
-        await prefs.setInt(_tokenExpiryKey, defaultExpiry.millisecondsSinceEpoch);
+        await prefs.setInt(
+            _tokenExpiryKey, defaultExpiry.millisecondsSinceEpoch);
       }
-      
+
       _tokenController.add(token);
     } catch (e) {
       // Handle storage errors
@@ -120,4 +123,3 @@ class SecureAuthManager implements AuthManager {
     _tokenController.close();
   }
 }
-

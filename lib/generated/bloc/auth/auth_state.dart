@@ -23,19 +23,31 @@ class AuthLoading extends AuthState {
 class Authenticated extends AuthState {
   final User user;
   final String? message;
+  final String? token;
 
   const Authenticated({
     required this.user,
     this.message,
+    this.token,
   });
 
   @override
   List<Object?> get props => [user, message];
 }
 
+class SPSavedState extends AuthState {
+  final String token;
+
+  const SPSavedState({required this.token});
+}
+
 /// Unauthenticated state
 class Unauthenticated extends AuthState {
   const Unauthenticated();
+}
+
+class DummyState extends AuthState {
+  const DummyState();
 }
 
 /// OTP sent state
@@ -81,4 +93,3 @@ class AuthError extends AuthState {
   @override
   List<Object?> get props => [message, canRetry];
 }
-

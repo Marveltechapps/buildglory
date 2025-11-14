@@ -14,13 +14,15 @@ class FeedbackService {
       '/feedback',
       fromJson: (json) {
         final list = json as List;
-        return list.map((item) => Feedback.fromJson(item as Map<String, dynamic>)).toList();
+        return list
+            .map((item) => Feedback.fromJson(item as Map<String, dynamic>))
+            .toList();
       },
     );
   }
 
   /// Submit feedback
-  Future<ApiResponse<Feedback>> submitFeedback({
+  Future<ApiResponse<Map<String, dynamic>>> submitFeedback({
     required String fullName,
     required String email,
     required String subject,
@@ -34,12 +36,13 @@ class FeedbackService {
         'subject': subject,
         'message': message,
       },
-      fromJson: (json) => Feedback.fromJson(json as Map<String, dynamic>),
+      fromJson: (json) => json as Map<String, dynamic>,
     );
   }
 
   /// Update feedback
-  Future<ApiResponse<Feedback>> updateFeedback(String id, Feedback feedback) async {
+  Future<ApiResponse<Feedback>> updateFeedback(
+      String id, Feedback feedback) async {
     return await _apiClient.put(
       '/feedback/$id',
       body: feedback.toJson(),
@@ -55,4 +58,3 @@ class FeedbackService {
     );
   }
 }
-

@@ -1,6 +1,9 @@
 import 'package:buildglory/constant/constant.dart';
 import 'package:buildglory/final/home/pages/home_main_screen.dart';
 import 'package:buildglory/final/login/pages/login_screen.dart';
+import 'package:buildglory/final/splash/bloc/splash_bloc.dart';
+import 'package:buildglory/final/splash/bloc/splash_event.dart';
+import 'package:buildglory/final/splash/bloc/splash_state.dart';
 import 'package:buildglory/generated/bloc/bloc_exports.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -84,14 +87,29 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset(splashGif),
-          const SizedBox(),
-        ],
+    return BlocProvider(
+      create: (context) => SplashBloc(),
+      child: BlocConsumer<SplashBloc, SplashState>(
+        listener: (context, state) {
+          if (state is GetsharedPreferenceSuccessState) {
+            token = state.token;
+          }
+        },
+        builder: (context, state) {
+          if (state is SplashInitialState) {
+            context.read<SplashBloc>().add(GetSharedPreferenceEvent());
+          }
+          return Scaffold(
+            backgroundColor: Colors.white,
+            body: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(splashGif),
+                const SizedBox(),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:buildglory/constant/constant.dart';
 import 'package:buildglory/new/presentation/profile/widgets/profile_edit_page.dart';
-import 'package:buildglory/presentation/profile/profile_screen.dart';
 import 'package:flutter/material.dart';
 
 class VerificationSuccessScreen extends StatefulWidget {

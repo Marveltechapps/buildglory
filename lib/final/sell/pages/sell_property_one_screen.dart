@@ -93,17 +93,19 @@ class SellPropertyOneScreen extends StatelessWidget {
               cityController.text = state.selectedValue;
             }
           } else if (state is NavigateNextScreenState) {
-            context.read<SellPropertyBloc>().buildUpArea =
-                builtUpAreaController.text;
-            context.read<SellPropertyBloc>().carpetArea =
-                carpetAreaController.text;
-            context.read<SellPropertyBloc>().locality = localityController.text;
-            context.read<SellPropertyBloc>().project = projectController.text;
+            final bloc = context.read<SellPropertyBloc>();
+            bloc.buildUpArea = builtUpAreaController.text;
+            bloc.carpetArea = carpetAreaController.text;
+            bloc.locality = localityController.text;
+            bloc.project = projectController.text;
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) {
-                  return SellPropertyTwoScreen();
+                  return BlocProvider.value(
+                    value: bloc,
+                    child: SellPropertyTwoScreen(),
+                  );
                 },
               ),
             );
@@ -592,9 +594,61 @@ class SellPropertyOneScreen extends StatelessWidget {
                               height: 42,
                               child: ElevatedButton(
                                 onPressed: () {
-                                  context.read<SellPropertyBloc>().add(
-                                    NavigateNextScreenEvent(screenName: ""),
-                                  );
+                                  final bloc = context.read<SellPropertyBloc>();
+                                  
+                                  // Validation
+                                  if (bloc.selectedAdvertisementType.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Please select Advertisement Type (Sale or Rent/Lease)'),
+                                        backgroundColor: Colors.orange,
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  
+                                  if (bloc.selectedPropertyType.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Please select Property Type'),
+                                        backgroundColor: Colors.orange,
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  
+                                  if (bloc.selectedBhkType.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Please select BHK Type'),
+                                        backgroundColor: Colors.orange,
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  
+                                  if (bloc.selectedCity.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Please select City'),
+                                        backgroundColor: Colors.orange,
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  
+                                  if (localityController.text.trim().isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Please enter Locality'),
+                                        backgroundColor: Colors.orange,
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  
+                                  // All validations passed
+                                  bloc.add(NavigateNextScreenEvent(screenName: ""));
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF155DFC),

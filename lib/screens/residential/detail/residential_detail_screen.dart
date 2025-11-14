@@ -251,7 +251,6 @@ class ResidentialDetailScreen extends StatelessWidget {
                   "Bedrooms",
                 ),
               ),
-
               const SizedBox(width: 16),
               Expanded(
                 child: _buildStatCard(
@@ -578,6 +577,13 @@ class ResidentialDetailScreen extends StatelessWidget {
                   title: title,
                   propertyid: property.id,
                   type: properytype,
+                  propertyTitle: property.name,
+                  propertyLocation: property.location,
+                  propertyPrice: property.price,
+                  propertyImageUrl: property.imageUrl,
+                  initialFullName: '',
+                  initialEmail: '',
+                  initialPhone: '',
                 );
               },
             ),

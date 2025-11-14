@@ -4,7 +4,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
 class ExchangePropertyOneSuccfessPage extends StatelessWidget {
-  const ExchangePropertyOneSuccfessPage({super.key});
+  final String propertyType;
+  final String configuration;
+  final String location;
+  final String expectedPrice;
+  final String ownerName;
+  final String contactNumber;
+  final String sellId;
+
+  const ExchangePropertyOneSuccfessPage({
+    super.key,
+    required this.propertyType,
+    required this.configuration,
+    required this.location,
+    required this.expectedPrice,
+    required this.ownerName,
+    required this.contactNumber,
+    required this.sellId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -122,39 +139,39 @@ class ExchangePropertyOneSuccfessPage extends StatelessWidget {
                             children: [
                               _buildPropertyDetailRow(
                                 'Property Type:',
-                                'apartment',
+                                _safeValue(propertyType),
                                 isPrice: false,
                               ),
                               const SizedBox(height: 11),
                               _buildPropertyDetailRow(
                                 'Configuration:',
-                                '2BHK',
+                                _safeValue(configuration),
                                 isPrice: false,
                                 isUppercase: true,
                               ),
                               const SizedBox(height: 11),
                               _buildPropertyDetailRow(
                                 'Location:',
-                                'SDF, bangalore',
+                                _safeValue(location),
                                 isPrice: false,
                                 isFlexible: true,
                               ),
                               const SizedBox(height: 11),
                               _buildPropertyDetailRow(
                                 'Expected Price:',
-                                '₹66',
+                                _formatPrice(expectedPrice),
                                 isPrice: true,
                               ),
                               const SizedBox(height: 11),
                               _buildPropertyDetailRow(
                                 'Owner:',
-                                'R6U',
+                                _safeValue(ownerName),
                                 isPrice: false,
                               ),
                               const SizedBox(height: 11),
                               _buildPropertyDetailRow(
                                 'Contact:',
-                                '',
+                                _safeValue(contactNumber),
                                 isPrice: false,
                               ),
                             ],
@@ -169,11 +186,22 @@ class ExchangePropertyOneSuccfessPage extends StatelessWidget {
                   // Start Exchange Process Button
                   ElevatedButton(
                     onPressed: () {
+                      if (sellId.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Unable to start exchange: missing sell reference'),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                        return;
+                      }
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) {
-                            return ExchangeMatchedPropertyListScreen();
+                            return ExchangeMatchedPropertyListScreen(
+                              sellId: sellId,
+                            );
                           },
                         ),
                       );
@@ -271,5 +299,17 @@ class ExchangePropertyOneSuccfessPage extends StatelessWidget {
           ),
       ],
     );
+  }
+
+  static String _safeValue(String value) {
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? '—' : trimmed;
+  }
+
+  static String _formatPrice(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty || trimmed == '—') return '—';
+    if (trimmed.startsWith('₹')) return trimmed;
+    return '₹$trimmed';
   }
 }

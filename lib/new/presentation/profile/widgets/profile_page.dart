@@ -1,6 +1,5 @@
 import 'package:buildglory/constant/constant.dart';
 import 'package:buildglory/generated/bloc/bloc_exports.dart';
-import 'package:buildglory/new/presentation/profile/widgets/profile_edit_page.dart';
 import 'package:buildglory/new/presentation/profile/widgets/profile_screen.dart';
 import 'package:buildglory/new/profile/favourites/fav_screen.dart';
 import 'package:buildglory/new/profile/generalinfo/pages/general_info_page.dart';
@@ -37,29 +36,29 @@ class _ProfilePageState extends State<ProfilePage> {
           // Handle history tap
         },
       ),
-      MenuItemModel(
-        iconUrl: offersIcon,
-        title: 'Offers',
-        description: 'Special deals and promotions',
-        onTap: () {
-          // Handle offers tap
-        },
-      ),
-      MenuItemModel(
-        iconUrl: favIcon,
-        title: 'Favorites',
-        description: 'Your saved properties',
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) {
-                return FavouritesScreen();
-              },
-            ),
-          );
-        },
-      ),
+      // MenuItemModel(
+      //   iconUrl: offersIcon,
+      //   title: 'Offers',
+      //   description: 'Special deals and promotions',
+      //   onTap: () {
+      //     // Handle offers tap
+      //   },
+      // ),
+      // MenuItemModel(
+      //   iconUrl: favIcon,
+      //   title: 'Favorites',
+      //   description: 'Your saved properties',
+      //   onTap: () {
+      //     Navigator.push(
+      //       context,
+      //       MaterialPageRoute(
+      //         builder: (context) {
+      //           return FavouritesScreen();
+      //         },
+      //       ),
+      //     );
+      //   },
+      // ),
       MenuItemModel(
         iconUrl: infogreyIcon,
         title: 'General Info',
@@ -131,13 +130,20 @@ class _ProfilePageState extends State<ProfilePage> {
       body: SafeArea(
         child: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, state) {
-            // Get user data from AuthBloc
+            if (state is AuthLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
             String phoneNumber = '+91 0000000000';
             String name = 'Guest User';
             String? avatarUrl;
 
             if (state is Authenticated) {
-              phoneNumber = '+91 ${state.user.mobileNumber}';
+              phoneNumber = _formatMobile(state.user.mobileNumber);
+              name = state.user.name ?? 'User';
+              avatarUrl = state.user.profileImage;
+            } else if (state is ProfileUpdated) {
+              phoneNumber = _formatMobile(state.user.mobileNumber);
               name = state.user.name ?? 'User';
               avatarUrl = state.user.profileImage;
             }
@@ -147,8 +153,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 UserProfileCard(
                   phoneNumber: phoneNumber,
                   name: name,
-                  avatarUrl: avatarUrl ??
-                      'https://api.builder.io/api/v1/image/assets/3eed9e34f3904b5687afb7d840d6be68/866190650fae56957bed18cc89e9532ff0d06b44?placeholderIfAbsent=true',
+                  avatarUrl: avatarUrl ?? '',
                   onEditPressed: () {
                     Navigator.push(
                       context,
@@ -160,21 +165,28 @@ class _ProfilePageState extends State<ProfilePage> {
                     );
                   },
                 ),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
-                child: ListView(
-                  children: _getMenuItems(
-                    context,
-                  ).map((item) => MenuItemCard(menuItem: item)).toList(),
-                ),
-              ),
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+                    child: ListView(
+                      children: _getMenuItems(
+                        context,
+                      ).map((item) => MenuItemCard(menuItem: item)).toList(),
+                    ),
+                  ),
+                )
               ],
             );
           },
         ),
       ),
     );
+  }
+
+  String _formatMobile(String mobile) {
+    if (mobile.trim().isEmpty) return '+91 0000000000';
+    if (mobile.startsWith('+')) return mobile;
+    return '+91 $mobile';
   }
 }

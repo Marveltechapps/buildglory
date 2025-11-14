@@ -15,6 +15,14 @@ class VerifyOtpApiEvent extends LoginEvent {
 
 class SharedPreferenceEvent extends LoginEvent {
   final String token;
+  final String? mobilenumber;
+  final String? name;
+  final String? email;
 
-  SharedPreferenceEvent({required this.token});
+  SharedPreferenceEvent({
+    required this.token,
+    this.mobilenumber,
+    this.name,
+    this.email,
+  });
 }

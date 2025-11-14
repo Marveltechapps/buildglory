@@ -7,6 +7,7 @@ class CustomInputField extends StatelessWidget {
   final TextEditingController controller;
   final String iconUrl;
   final String? hintText;
+  final TextInputType keyboardType;
 
   const CustomInputField({
     Key? key,
@@ -15,6 +16,7 @@ class CustomInputField extends StatelessWidget {
     required this.controller,
     required this.iconUrl,
     this.hintText,
+    this.keyboardType = TextInputType.text,
   }) : super(key: key);
 
   @override
@@ -66,12 +68,21 @@ class CustomInputField extends StatelessWidget {
                 Expanded(
                   child: TextFormField(
                     controller: controller,
+                    keyboardType: keyboardType,
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
                       color: Color(0xFF717182),
                       fontFamily: 'Arial',
                     ),
+                    validator: isRequired
+                        ? (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter $label';
+                            }
+                            return null;
+                          }
+                        : null,
                     decoration: const InputDecoration(
                       border: InputBorder.none,
                       isDense: true,

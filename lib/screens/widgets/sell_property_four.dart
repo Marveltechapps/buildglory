@@ -252,7 +252,6 @@ class _SellPropertyFormPageState extends State<SellPropertyFour> {
                                   width: 17,
                                   height: 17,
                                   margin: const EdgeInsets.only(top: 1),
-
                                   child: Checkbox(
                                     value: false,
                                     onChanged: (val) {},
@@ -334,23 +333,36 @@ class _SellPropertyFormPageState extends State<SellPropertyFour> {
                           Expanded(
                             child: InkWell(
                               onTap: () {
-                                flowname == "Sell"
-                                    ? Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) {
-                                            return SellPropertySuccess();
-                                          },
-                                        ),
-                                      )
-                                    : Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) {
-                                            return ExchangePropertyOneSuccfessPage();
-                                          },
-                                        ),
-                                      );
+                                if (flowname == "Sell") {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) {
+                                        return SellPropertySuccess();
+                                      },
+                                    ),
+                                  );
+                                } else {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) {
+                                        return ExchangePropertyOneSuccfessPage(
+                                          propertyType: _safeValue('Apartment'),
+                                          configuration: _safeValue('2 BHK'),
+                                          location: _safeValue(
+                                              ''), // Add actual location if available
+                                          expectedPrice: _safeValue('₹0'),
+                                          ownerName: _safeValue(
+                                              _fullNameController.text),
+                                          contactNumber: _safeValue(
+                                              _mobileController.text),
+                                          sellId: '',
+                                        );
+                                      },
+                                    ),
+                                  );
+                                }
                               },
                               child: Container(
                                 height: 42,
@@ -384,4 +396,9 @@ class _SellPropertyFormPageState extends State<SellPropertyFour> {
       ),
     );
   }
+}
+
+String _safeValue(String value) {
+  final trimmed = value.trim();
+  return trimmed.isEmpty ? '—' : trimmed;
 }

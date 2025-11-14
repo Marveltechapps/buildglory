@@ -2,27 +2,147 @@ import 'package:buildglory/constant/constant.dart';
 import 'package:buildglory/final/sell/bloc/sell_property_bloc.dart';
 import 'package:buildglory/final/sell/bloc/sell_property_event.dart';
 import 'package:buildglory/final/sell/bloc/sell_property_state.dart';
+import 'package:buildglory/final/sell/model/sell_property_save_response_mode.dart';
+import 'package:buildglory/final/sell/pages/sell_property_one_screen.dart';
+import 'package:buildglory/final/sell/pages/sell_property_two_screen.dart';
+import 'package:buildglory/final/sell/pages/sell_property_three_screen.dart';
 import 'package:buildglory/new/presentation/profile/widgets/custom_input_field.dart';
 import 'package:buildglory/screens/exchange/exchange_success_one_screen.dart';
 import 'package:buildglory/screens/widgets/sell_property_succes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class SellPropertyFourScreen extends StatelessWidget {
+class SellPropertyFourScreen extends StatefulWidget {
   const SellPropertyFourScreen({super.key});
 
-  static TextEditingController fullNameController = TextEditingController();
-  static TextEditingController mobileController = TextEditingController();
-  static TextEditingController emailController = TextEditingController();
+  @override
+  State<SellPropertyFourScreen> createState() => _SellPropertyFourScreenState();
+}
+
+class _SellPropertyFourScreenState extends State<SellPropertyFourScreen> {
+  final TextEditingController fullNameController = TextEditingController();
+  final TextEditingController mobileController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Always reload mobile number from login
+    final mobile = prefs.getString('mobileNumber') ?? '';
+    mobileController.text = mobile;
+    
+    // Load user name if available (only if field is empty)
+    if (fullNameController.text.isEmpty) {
+      final name = prefs.getString('userName') ?? '';
+      fullNameController.text = name;
+    }
+    
+    // Load email if available (only if field is empty)
+    if (emailController.text.isEmpty) {
+      final email = prefs.getString('userEmail') ?? '';
+      emailController.text = email;
+    }
+    
+    debugPrint("📱 Auto-filled from saved data:");
+    debugPrint("  Mobile: $mobile");
+    debugPrint("  Name: ${fullNameController.text}");
+    debugPrint("  Email: ${emailController.text}");
+  }
+
+  void _clearAllFormData() {
+    // Clear Screen 1 controllers
+    SellPropertyOneScreen.builtUpAreaController.clear();
+    SellPropertyOneScreen.carpetAreaController.clear();
+    SellPropertyOneScreen.localityController.clear();
+    SellPropertyOneScreen.projectController.clear();
+    SellPropertyOneScreen.cityController.clear();
+    SellPropertyOneScreen.bhktypeController.clear();
+    
+    // Clear Screen 2 controllers
+    SellPropertyTwoScreen.expectedpriceController.clear();
+    SellPropertyTwoScreen.ageofconstructionController.clear();
+    SellPropertyTwoScreen.facingController.clear();
+    SellPropertyTwoScreen.ownershipController.clear();
+    SellPropertyTwoScreen.furnishedstatusController.clear();
+    
+    // Clear Screen 3 controllers
+    SellPropertyThreeScreen.descriptionController.clear();
+    
+    // Clear Screen 4 controllers
+    fullNameController.clear();
+    mobileController.clear();
+    emailController.clear();
+    
+    debugPrint("🧹 All form controllers cleared");
+  }
+
+  Map<String, String> _buildPropertySummary(
+    SellPropertyBloc bloc,
+    SellPropertySaveResponseModel? response,
+  ) {
+    String location = '';
+    final locationParts = <String>[
+      bloc.locality.trim(),
+      bloc.selectedCity.trim(),
+    ].where((element) => element.isNotEmpty).toList();
+    if (locationParts.isNotEmpty) {
+      location = locationParts.join(', ');
+    }
+
+    return {
+      'propertyType': bloc.selectedPropertyType.trim(),
+      'configuration': bloc.selectedBhkType.trim(),
+      'location': location,
+      'expectedPrice': bloc.expectedPrice.trim(),
+      'ownerName': bloc.fullName.trim(),
+      'contactNumber': bloc.mobileNumber.trim(),
+      'sellId': response?.id ?? '',
+    };
+  }
+
+  String _safeSummaryValue(String? value) {
+    if (value == null) return '—';
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? '—' : trimmed;
+  }
+
+  @override
+  void dispose() {
+    fullNameController.dispose();
+    mobileController.dispose();
+    emailController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => SellPropertyBloc(),
-      child: BlocConsumer<SellPropertyBloc, SellPropertyState>(
+    return BlocConsumer<SellPropertyBloc, SellPropertyState>(
         listener: (context, state) {
           if (state is SellPropertySaveSuccessState) {
+            final bloc = context.read<SellPropertyBloc>();
+            final summary =
+                _buildPropertySummary(bloc, state.sellPropertySaveResponseModel);
+            // Clear all form data
+            _clearAllFormData();
+            bloc.add(ClearSellPropertyDataEvent());
+            
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Property listed successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            
+            // Navigate to success screen
             flowname == "Sell"
                 ? Navigator.push(
                     context,
@@ -36,10 +156,27 @@ class SellPropertyFourScreen extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) {
-                        return ExchangePropertyOneSuccfessPage();
+                        return ExchangePropertyOneSuccfessPage(
+                          propertyType: _safeSummaryValue(summary['propertyType']),
+                          configuration: _safeSummaryValue(summary['configuration']),
+                          location: _safeSummaryValue(summary['location']),
+                          expectedPrice: _safeSummaryValue(summary['expectedPrice']),
+                          ownerName: _safeSummaryValue(summary['ownerName']),
+                          contactNumber: _safeSummaryValue(summary['contactNumber']),
+                          sellId: summary['sellId'] ?? '',
+                        );
                       },
                     ),
                   );
+          } else if (state is SellErrorState) {
+            // Show error message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.errorMsg),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 3),
+              ),
+            );
           } else if (state is SelectedOptionSuccessState) {
             if (state.selectedValue == "true") {
               context.read<SellPropertyBloc>().termsandconditon = true;
@@ -49,9 +186,13 @@ class SellPropertyFourScreen extends StatelessWidget {
           }
         },
         builder: (context, state) {
+          final isLoading = state is SellLoadingState;
+          
           return Scaffold(
             backgroundColor: const Color(0xFFF9FAFB),
-            body: SafeArea(
+            body: Stack(
+              children: [
+                SafeArea(
               child: Column(
                 children: [
                   // Header Section
@@ -378,9 +519,88 @@ class SellPropertyFourScreen extends StatelessWidget {
                                 Expanded(
                                   child: InkWell(
                                     onTap: () {
-                                      context.read<SellPropertyBloc>().add(
-                                        SellPropertySaveEvent(),
-                                      );
+                                      final bloc = context.read<SellPropertyBloc>();
+                                      
+                                      // Validate required fields
+                                      if (fullNameController.text.trim().isEmpty) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Please enter your full name'),
+                                            backgroundColor: Colors.orange,
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      
+                                      if (fullNameController.text.trim().length < 3) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Name must be at least 3 characters'),
+                                            backgroundColor: Colors.orange,
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      
+                                      if (mobileController.text.trim().isEmpty) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Please enter mobile number'),
+                                            backgroundColor: Colors.orange,
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      
+                                      // Validate mobile number (must be 10 digits)
+                                      final mobile = mobileController.text.trim();
+                                      if (mobile.length != 10 || !RegExp(r'^[0-9]+$').hasMatch(mobile)) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Please enter a valid 10-digit mobile number'),
+                                            backgroundColor: Colors.orange,
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      
+                                      // Validate email if provided
+                                      if (emailController.text.trim().isNotEmpty) {
+                                        final email = emailController.text.trim();
+                                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Please enter a valid email address'),
+                                              backgroundColor: Colors.orange,
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                      }
+                                      
+                                      if (!bloc.termsandconditon) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Please agree to Terms & Conditions'),
+                                            backgroundColor: Colors.orange,
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      
+                                      // Save owner details to bloc before API call
+                                      bloc.fullName = fullNameController.text.trim();
+                                      bloc.mobileNumber = mobileController.text.trim();
+                                      bloc.emailAddress = emailController.text.trim();
+                                      
+                                      debugPrint("✅ Screen 4 validation passed");
+                                      debugPrint("Full Name: ${fullNameController.text}");
+                                      debugPrint("Mobile: ${mobileController.text}");
+                                      debugPrint("Email: ${emailController.text}");
+                                      debugPrint("Terms Accepted: ${bloc.termsandconditon}");
+                                      
+                                      // Trigger API call
+                                      bloc.add(SellPropertySaveEvent());
                                     },
                                     child: Container(
                                       height: 42,
@@ -409,12 +629,40 @@ class SellPropertyFourScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                ],
+                  ],
+                ),
               ),
+                // Loading Overlay
+                if (isLoading)
+                  Container(
+                    color: Colors.black.withOpacity(0.5),
+                    child: const Center(
+                      child: Card(
+                        margin: EdgeInsets.all(40),
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(),
+                              SizedBox(height: 16),
+                              Text(
+                                'Uploading property details...',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           );
         },
-      ),
-    );
+      );
   }
 }

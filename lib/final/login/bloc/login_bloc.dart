@@ -26,6 +26,22 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', true);
     await prefs.setString('token', event.token);
+
+    // Store mobile number for later use
+    if (event.mobilenumber != null && event.mobilenumber!.isNotEmpty) {
+      await prefs.setString('mobileNumber', event.mobilenumber!);
+    }
+
+    // Store name if available
+    if (event.name != null && event.name!.isNotEmpty) {
+      await prefs.setString('userName', event.name!);
+    }
+
+    // Store email if available
+    if (event.email != null && event.email!.isNotEmpty) {
+      await prefs.setString('userEmail', event.email!);
+    }
+
     emit(SharedPreferenceSavedState(token: event.token));
   }
 
